@@ -1,0 +1,8 @@
+{
+  // Go 파일에만 적용(다른 언어 영향 최소화)
+  "[go]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "never",
+    }
+  },
+}

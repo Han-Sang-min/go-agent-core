@@ -1,12 +1,12 @@
 {
   "name": "hello-go",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
-
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/devcontainers/features/go:1": { "version": "1.25.5" }
+    "ghcr.io/devcontainers/features/go:1": { "version": "1.22" }
   },
-
   "postCreateCommand": "sudo apt-get update && sudo apt-get install -y make curl",
-  "remoteUser": "vscode"
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/go-agent-core",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/go-agent-core,type=bind"
 }

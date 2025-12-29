@@ -5,6 +5,7 @@ package env
 import (
 	"bufio"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,17 +38,17 @@ func DetectEnv() RuntimeEnv {
 	return NewHostEnv()
 }
 
-func fileExsists(path string) bool {
+func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil || !os.IsNotExist(err)
 }
 
 func isCgroupV2() bool {
-	return fileExsists("/sys/fs/cgroup.controllers")
+	return fileExists("/sys/fs/cgroup.controllers")
 }
 
 func isContainer() bool {
-	if fileExsists("/.dockerenv") || fileExsists("/run/.containerenv") {
+	if fileExists("/.dockerenv") || fileExists("/run/.containerenv") {
 		return true
 	}
 
@@ -80,6 +81,32 @@ func selfCgroupPathV2() (string, error) {
 		}
 		if parts[0] == "0" && parts[1] == "" {
 			p := parts[2]
+			if p == "" {
+				return "", errors.New("empty cgroup path")
+			}
+			return p, nil
 		}
 	}
+	if err := sc.Err(); err != nil {
+		return "", err
+	}
+	return "", errors.New("cgroup v2 path not found in /proc/self/cgroup")
+}
+
+// ---------
+
+type CgroupV2Reader struct {
+	base string
+}
+
+func NewCgroupV2Reader(base string) *CgroupV2Reader {
+	return &CgroupV2Reader{base: base}
+}
+
+func (r *CgroupV2Reader) readFile(name string) (string, error) {
+	b, err := os.ReadFile(filepath.Join(r.base, name))
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(b)), nil
 }

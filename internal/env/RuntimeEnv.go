@@ -8,6 +8,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -109,4 +110,16 @@ func (r *CgroupV2Reader) readFile(name string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(b)), nil
+}
+
+func (r *CgroupV2Reader) MemCurrent() (uint64, error) {
+	s, err := r.readFile("memory.current")
+	if err != nil {
+		return 0, err
+	}
+	return parseUint(s)
+}
+
+func parseUint(s string) (uint64, error) {
+	return strconv.ParseUint(strings.TrimSpace(s), 10, 64)
 }

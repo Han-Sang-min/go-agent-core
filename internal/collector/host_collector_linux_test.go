@@ -12,7 +12,7 @@ func TestReadCPU(t *testing.T) {
 	ctx, canel := context.WithCancel(context.Background())
 	defer canel()
 
-	collecorCh := make(chan HostMeterics, 1)
+	collecorCh := make(chan HostMetrics, 1)
 	go Collector(ctx, collecorCh)
 
 	// timeout := time.NewTimer(2 * time.Second)

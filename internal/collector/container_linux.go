@@ -9,6 +9,8 @@ import (
 )
 
 type ContainerEnv struct {
+	CommonEnv
+
 	r *CgroupV2Reader
 
 	mu        sync.Mutex

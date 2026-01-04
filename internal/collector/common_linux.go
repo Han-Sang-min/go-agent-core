@@ -9,7 +9,9 @@ import (
 	"syscall"
 )
 
-type CommonEnv struct{}
+type CommonEnv struct {
+	procRoot string
+}
 
 type diskStat struct {
 	total uint64

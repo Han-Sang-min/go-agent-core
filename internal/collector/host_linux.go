@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"context"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -30,7 +31,13 @@ type memStat struct {
 	valid       bool
 }
 
-func NewHostEnv() *HostEnv { return &HostEnv{} }
+func NewHostEnv(root string) *HostEnv {
+	if root == "" {
+		root = "/proc"
+	}
+	return &HostEnv{
+		CommonEnv: CommonEnv{procRoot: root}}
+}
 
 func (e *HostEnv) Kind() string {
 	return "host"
@@ -82,7 +89,7 @@ func (e *HostEnv) Mem(ctx context.Context) (MemInfo, error) {
 }
 
 func (e *HostEnv) readMem() memStat {
-	f, err := os.Open("/proc/meminfo")
+	f, err := os.Open(filepath.Join(e.procRoot, "meminfo"))
 	if err != nil {
 		return memStat{}
 	}
@@ -139,7 +146,7 @@ func (e *HostEnv) calcMemUsagePercent(s memStat) (float64, bool) {
 }
 
 func (e *HostEnv) readCPU() cpuStat {
-	f, err := os.Open("/proc/stat")
+	f, err := os.Open(filepath.Join(e.procRoot, "stat"))
 	if err != nil {
 		return cpuStat{}
 	}

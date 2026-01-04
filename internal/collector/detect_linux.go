@@ -20,10 +20,10 @@ func DetectEnv() RuntimeEnv {
 				base = filepath.Join(base, cgPath)
 			}
 			reader := NewCgroupV2Reader(base)
-			return NewContainerEnv(reader)
+			return NewContainerEnv(reader, "")
 		}
 	}
-	return NewHostEnv()
+	return NewHostEnv("")
 }
 
 func isContainer() bool {

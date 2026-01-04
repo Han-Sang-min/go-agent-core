@@ -20,8 +20,13 @@ type ContainerEnv struct {
 	hasPrev   bool
 }
 
-func NewContainerEnv(r *CgroupV2Reader) *ContainerEnv {
-	return &ContainerEnv{r: r}
+func NewContainerEnv(r *CgroupV2Reader, rootPath string) *ContainerEnv {
+	if rootPath == "" {
+		rootPath = "/proc"
+	}
+	return &ContainerEnv{
+		CommonEnv: CommonEnv{procRoot: rootPath},
+		r:         r}
 }
 
 func (e *ContainerEnv) Kind() string { return "Container" }

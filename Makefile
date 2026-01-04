@@ -4,10 +4,10 @@ build:
 	go build -o bin/agent ./cmd/agent
 
 run: build
-	./bin/agent -config=cmd/agent/main.go
+	./bin/agent -config=./config.json
 
 once: build
-	./bin/agent -config=cmd/agent/main.go -once
+	./bin/agent -config=./config.json -once
 
 test:
 	go test ./...

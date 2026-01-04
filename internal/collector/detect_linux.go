@@ -5,6 +5,7 @@ package collector
 import (
 	"bufio"
 	"errors"
+	"go-agent/internal/util"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,7 +14,12 @@ import (
 func DetectEnv() RuntimeEnv {
 	if isContainer() && isCgroupV2() {
 		if cgPath, err := selfCgroupPathV2(); err == nil {
-			reader := NewCgroupV2Reader(filepath.Join("/sys/fs/cgroup", cgPath))
+			cgPath = strings.TrimPrefix(cgPath, "/")
+			base := "/sys/fs/cgroup"
+			if cgPath != "" {
+				base = filepath.Join(base, cgPath)
+			}
+			reader := NewCgroupV2Reader(base)
 			return NewContainerEnv(reader)
 		}
 	}
@@ -21,7 +27,7 @@ func DetectEnv() RuntimeEnv {
 }
 
 func isContainer() bool {
-	if fileExists("/.dockerenv") || fileExists("/run/.containerenv") {
+	if util.FileExists("/.dockerenv") || util.FileExists("/run/.containerenv") {
 		return true
 	}
 
@@ -39,7 +45,7 @@ func isContainer() bool {
 }
 
 func isCgroupV2() bool {
-	return fileExists("/sys/fs/cgroup.controllers")
+	return util.FileExists("/sys/fs/cgroup/cgroup.controllers")
 }
 
 func selfCgroupPathV2() (string, error) {

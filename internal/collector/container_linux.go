@@ -4,6 +4,7 @@ package collector
 
 import (
 	"context"
+	"math"
 	"sync"
 	"time"
 )
@@ -36,7 +37,7 @@ func (e *ContainerEnv) Mem(ctx context.Context) (MemInfo, error) {
 		return MemInfo{}, err
 	}
 
-	var percent float64
+	percent := math.NaN()
 	var limitOut uint64
 	if !unlimited && limit > 0 {
 		limitOut = limit
@@ -82,6 +83,18 @@ func (e *ContainerEnv) CPU(ctx context.Context) (CPUInfo, error) {
 	}
 
 	dt := now.Sub(e.prevTS)
+
+	if dt <= 0 {
+		e.prevTS = now
+		e.prevUsage = usageUsec
+		return CPUInfo{UsagePercent: 0, LimitCores: limitCores}, nil
+	}
+	if usageUsec < e.prevUsage {
+		e.prevTS = now
+		e.prevUsage = usageUsec
+		return CPUInfo{UsagePercent: 0, LimitCores: limitCores}, nil
+	}
+
 	du := usageUsec - e.prevUsage
 
 	e.prevTS = now

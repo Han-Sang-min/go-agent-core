@@ -5,6 +5,7 @@ package collector
 import (
 	"errors"
 	"fmt"
+	"go-agent/internal/util"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +32,7 @@ func (r *CgroupV2Reader) MemCurrent() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return parseUint(s)
+	return util.ParseUint(s)
 }
 
 func (r *CgroupV2Reader) MemMax() (limit uint64, unlimited bool, err error) {
@@ -42,7 +43,7 @@ func (r *CgroupV2Reader) MemMax() (limit uint64, unlimited bool, err error) {
 	if s == "max" {
 		return 0, true, nil
 	}
-	v, err := parseUint(s)
+	v, err := util.ParseUint(s)
 	return v, false, err
 }
 
@@ -54,7 +55,7 @@ func (r *CgroupV2Reader) CPUUsageUsec() (uint64, error) {
 	for _, line := range strings.Split(s, "\n") {
 		fields := strings.Fields(line)
 		if len(fields) == 2 && fields[0] == "usage_usec" {
-			return parseUint(fields[1])
+			return util.ParseUint(fields[1])
 		}
 	}
 	return 0, errors.New("usage_usec not found in cpu.stat")
@@ -71,7 +72,7 @@ func (r *CgroupV2Reader) CPUMax() (quotaUsec uint64, periodUsec uint64, unlimite
 		return 0, 0, false, fmt.Errorf("unexpected cpu.max format: %q", s)
 	}
 
-	period, err := parseUint(fields[1])
+	period, err := util.ParseUint(fields[1])
 	if err != nil {
 		return 0, 0, false, err
 	}
@@ -80,7 +81,7 @@ func (r *CgroupV2Reader) CPUMax() (quotaUsec uint64, periodUsec uint64, unlimite
 		return 0, period, true, nil
 	}
 
-	quota, err := parseUint(fields[0])
+	quota, err := util.ParseUint(fields[0])
 	if err != nil {
 		return 0, 0, false, err
 	}

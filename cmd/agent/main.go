@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"go-agent/internal/collector"
+	"go-agent/internal/config"
+	"math"
 	"os"
 	"os/signal"
 	"sync/atomic"
@@ -26,15 +28,39 @@ func mustLoadLocation(src string) *time.Location {
 	return l
 }
 
-func main() {
-	var env collector.RuntimeEnv = collector.DetectEnv()
-	fmt.Printf("Detected Environment: %s\n", env.Kind())
+func formatBytes(b uint64) string {
+	const (
+		KB = 1024
+		MB = 1024 * KB
+		GB = 1024 * MB
+	)
 
-	config := flag.String("config", "", "config file path")
+	switch {
+	case b >= GB:
+		return fmt.Sprintf("%.2fGiB", float64(b)/float64(GB))
+	case b >= MB:
+		return fmt.Sprintf("%.2fMiB", float64(b)/float64(MB))
+	case b >= KB:
+		return fmt.Sprintf("%.2fKiB", float64(b)/float64(KB))
+	default:
+		return fmt.Sprintf("%dB", b)
+	}
+}
+
+func main() {
+	configPath := flag.String("config", "", "config file path")
 	once := flag.Bool("once", false, "run once")
 	flag.Parse()
 
-	_ = config
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config load failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	var env collector.RuntimeEnv = collector.DetectEnv()
+	fmt.Printf("Detected Environment: %s\n", env.Kind())
+	fmt.Printf("Config interval: %s\n", cfg.Interval.Duration)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -43,7 +69,7 @@ func main() {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigCh)
 
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(cfg.Interval.Duration)
 	defer ticker.Stop()
 
 	fmt.Print("Agent Start.\n")
@@ -70,11 +96,21 @@ func main() {
 			fmt.Printf("Proc Error: %v\n", err)
 		}
 
-		fmt.Printf("[Seq: %d] [Time: %s] CPU: %.2f%%, Mem: %.2f%%, Disk: %.2f%%, Procs: %d\n",
+		memStr := fmt.Sprintf("%7.2f%%", memInfo.UsedPercent)
+		if math.IsNaN(memInfo.UsedPercent) {
+			memStr = fmt.Sprintf(" N/A (%s)", formatBytes(memInfo.UsedBytes))
+		}
+
+		ts := time.Now().In(loc).Format("2006-01-02 15:04:05.000 MST")
+		fmt.Printf(
+			"[Seq:%6d] [Time:%s] CPU:%7.2f%%  Mem:%s  Disk:%7.2f%%  Procs:%6d\n",
 			seq,
-			time.Now().In(loc),
+			ts,
 			cpuInfo.UsagePercent,
-			memInfo.UsedPercent, diskInfo.UsedPercent, procInfo.Count)
+			memStr,
+			diskInfo.UsedPercent,
+			procInfo.Count,
+		)
 	}
 
 	if *once {

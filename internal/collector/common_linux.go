@@ -20,8 +20,8 @@ type diskStat struct {
 	valid bool
 }
 
-func (c *CommonEnv) Disk(ctc context.Context) (DiskInfo, error) {
-	var ret DiskInfo
+func (c *CommonEnv) Disk(ctc context.Context) (DiskStats, error) {
+	var ret DiskStats
 
 	stat := c.readDisk(c.procRoot)
 	if !stat.valid {
@@ -40,8 +40,8 @@ func (c *CommonEnv) Disk(ctc context.Context) (DiskInfo, error) {
 	return ret, nil
 }
 
-func (c *CommonEnv) Procs(ctc context.Context) (ProcInfo, error) {
-	var ret ProcInfo
+func (c *CommonEnv) Procs(ctc context.Context) (ProcStats, error) {
+	var ret ProcStats
 	count, ok := c.readProcCount()
 	if !ok {
 		return ret, nil

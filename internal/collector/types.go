@@ -4,31 +4,31 @@ import (
 	"context"
 )
 
-type CPUInfo struct {
+type CPUStats struct {
 	UsagePercent float64
 	LimitCores   float64
 }
 
-type MemInfo struct {
+type MemStats struct {
 	UsedBytes   uint64
 	LimitBytes  uint64
 	UsedPercent float64
 }
 
-type DiskInfo struct {
+type DiskStats struct {
 	TotalBytes  uint64
 	UsedBytes   uint64
 	UsedPercent float64
 }
 
-type ProcInfo struct {
+type ProcStats struct {
 	Count int
 }
 
 type RuntimeEnv interface {
 	Kind() string
-	CPU(ctx context.Context) (CPUInfo, error)
-	Mem(ctx context.Context) (MemInfo, error)
-	Disk(ctx context.Context) (DiskInfo, error)
-	Procs(ctx context.Context) (ProcInfo, error)
+	CPU(ctx context.Context) (CPUStats, error)
+	Mem(ctx context.Context) (MemStats, error)
+	Disk(ctx context.Context) (DiskStats, error)
+	Procs(ctx context.Context) (ProcStats, error)
 }

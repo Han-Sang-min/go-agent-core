@@ -15,10 +15,11 @@ func TestHostEnv_Integration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	meminfoContent := `MemTotal:        16000000 kB
-MemAvailable:     8000000 kB
-`
-	if err := os.WriteFile(filepath.Join(procDir, "meminfo"), []byte(meminfoContent), 0644); err != nil {
+	MemStatsContent := `
+		MemTotal:        16000000 kB
+		MemAvailable:     8000000 kB
+	`
+	if err := os.WriteFile(filepath.Join(procDir, "MemStats"), []byte(MemStatsContent), 0644); err != nil {
 		t.Fatal(err)
 	}
 

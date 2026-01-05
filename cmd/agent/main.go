@@ -76,29 +76,29 @@ func main() {
 
 	collect := func() {
 		seq := counter.Add(1)
-		cpuInfo, err := env.CPU(ctx)
+		CPUStats, err := env.CPU(ctx)
 		if err != nil {
 			fmt.Printf("CPU Error: %v\n", err)
 		}
 
-		memInfo, err := env.Mem(ctx)
+		MemStats, err := env.Mem(ctx)
 		if err != nil {
 			fmt.Printf("Mem Error: %v\n", err)
 		}
 
-		diskInfo, err := env.Disk(ctx)
+		DiskStats, err := env.Disk(ctx)
 		if err != nil {
 			fmt.Printf("Disk Error: %v\n", err)
 		}
 
-		procInfo, err := env.Procs(ctx)
+		ProcStats, err := env.Procs(ctx)
 		if err != nil {
 			fmt.Printf("Proc Error: %v\n", err)
 		}
 
-		memStr := fmt.Sprintf("%7.2f%%", memInfo.UsedPercent)
-		if math.IsNaN(memInfo.UsedPercent) {
-			memStr = fmt.Sprintf(" N/A (%s)", formatBytes(memInfo.UsedBytes))
+		memStr := fmt.Sprintf("%7.2f%%", MemStats.UsedPercent)
+		if math.IsNaN(MemStats.UsedPercent) {
+			memStr = fmt.Sprintf(" N/A (%s)", formatBytes(MemStats.UsedBytes))
 		}
 
 		ts := time.Now().In(loc).Format("2006-01-02 15:04:05.000 MST")
@@ -106,10 +106,10 @@ func main() {
 			"[Seq:%6d] [Time:%s] CPU:%7.2f%%  Mem:%s  Disk:%7.2f%%  Procs:%6d\n",
 			seq,
 			ts,
-			cpuInfo.UsagePercent,
+			CPUStats.UsagePercent,
 			memStr,
-			diskInfo.UsedPercent,
-			procInfo.Count,
+			DiskStats.UsedPercent,
+			ProcStats.Count,
 		)
 	}
 

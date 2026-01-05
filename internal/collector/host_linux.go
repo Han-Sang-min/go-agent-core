@@ -16,16 +16,16 @@ type HostEnv struct {
 	CommonEnv
 
 	hasPrev  bool
-	prevStat cpuStat
+	prevStat hostCpuSample
 }
 
-type cpuStat struct {
+type hostCpuSample struct {
 	user, nice, system, idle, iowait, irq, softirq, steal uint64
 	total                                                 uint64
 	valid                                                 bool
 }
 
-type memStat struct {
+type hostMemSample struct {
 	totalKB     uint64
 	availableKB uint64
 	valid       bool
@@ -43,8 +43,8 @@ func (e *HostEnv) Kind() string {
 	return "host"
 }
 
-func (e *HostEnv) CPU(ctx context.Context) (CPUInfo, error) {
-	var ret CPUInfo
+func (e *HostEnv) CPU(ctx context.Context) (CPUStats, error) {
+	var ret CPUStats
 
 	curr := e.readCPU()
 
@@ -67,8 +67,8 @@ func (e *HostEnv) CPU(ctx context.Context) (CPUInfo, error) {
 	return ret, nil
 }
 
-func (e *HostEnv) Mem(ctx context.Context) (MemInfo, error) {
-	var ret MemInfo
+func (e *HostEnv) Mem(ctx context.Context) (MemStats, error) {
+	var ret MemStats
 
 	curr := e.readMem()
 	if !curr.valid {
@@ -88,10 +88,10 @@ func (e *HostEnv) Mem(ctx context.Context) (MemInfo, error) {
 	return ret, nil
 }
 
-func (e *HostEnv) readMem() memStat {
-	f, err := os.Open(filepath.Join(e.procRoot, "proc", "meminfo"))
+func (e *HostEnv) readMem() hostMemSample {
+	f, err := os.Open(filepath.Join(e.procRoot, "proc", "MemStats"))
 	if err != nil {
-		return memStat{}
+		return hostMemSample{}
 	}
 	defer f.Close()
 
@@ -123,17 +123,17 @@ func (e *HostEnv) readMem() memStat {
 	}
 
 	if !haveTotal || !haveAvail || total == 0 || avail > total {
-		return memStat{}
+		return hostMemSample{}
 	}
 
-	return memStat{
+	return hostMemSample{
 		totalKB:     total,
 		availableKB: avail,
 		valid:       true,
 	}
 }
 
-func (e *HostEnv) calcMemUsagePercent(s memStat) (float64, bool) {
+func (e *HostEnv) calcMemUsagePercent(s hostMemSample) (float64, bool) {
 	if !s.valid || s.totalKB == 0 || s.availableKB > s.totalKB {
 		return 0, false
 	}
@@ -145,21 +145,21 @@ func (e *HostEnv) calcMemUsagePercent(s memStat) (float64, bool) {
 	return usage, true
 }
 
-func (e *HostEnv) readCPU() cpuStat {
+func (e *HostEnv) readCPU() hostCpuSample {
 	f, err := os.Open(filepath.Join(e.procRoot, "proc", "stat"))
 	if err != nil {
-		return cpuStat{}
+		return hostCpuSample{}
 	}
 	defer f.Close()
 
 	sc := bufio.NewScanner(f)
 	if !sc.Scan() {
-		return cpuStat{}
+		return hostCpuSample{}
 	}
 	line := sc.Text()
 	fields := strings.Fields(line)
 	if len(fields) < 5 || fields[0] != "cpu" {
-		return cpuStat{}
+		return hostCpuSample{}
 	}
 
 	parse := func(i int) (uint64, bool) {
@@ -174,30 +174,30 @@ func (e *HostEnv) readCPU() cpuStat {
 	}
 
 	var ok bool
-	var s cpuStat
+	var s hostCpuSample
 	if s.user, ok = parse(1); !ok {
-		return cpuStat{}
+		return hostCpuSample{}
 	}
 	if s.nice, ok = parse(2); !ok {
-		return cpuStat{}
+		return hostCpuSample{}
 	}
 	if s.system, ok = parse(3); !ok {
-		return cpuStat{}
+		return hostCpuSample{}
 	}
 	if s.idle, ok = parse(4); !ok {
-		return cpuStat{}
+		return hostCpuSample{}
 	}
 	if s.iowait, ok = parse(5); !ok {
-		return cpuStat{}
+		return hostCpuSample{}
 	}
 	if s.irq, ok = parse(6); !ok {
-		return cpuStat{}
+		return hostCpuSample{}
 	}
 	if s.softirq, ok = parse(7); !ok {
-		return cpuStat{}
+		return hostCpuSample{}
 	}
 	if s.steal, ok = parse(8); !ok {
-		return cpuStat{}
+		return hostCpuSample{}
 	}
 
 	s.total = s.user + s.nice + s.system + s.idle + s.iowait + s.irq + s.softirq + s.steal
@@ -205,7 +205,7 @@ func (e *HostEnv) readCPU() cpuStat {
 	return s
 }
 
-func (e *HostEnv) calcCpuUsage(prev, curr cpuStat) (float64, bool) {
+func (e *HostEnv) calcCpuUsage(prev, curr hostCpuSample) (float64, bool) {
 	if !prev.valid || !curr.valid {
 		return 0, false
 	}

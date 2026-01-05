@@ -6,6 +6,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"path/filepath"
 	"syscall"
 )
 
@@ -22,7 +23,7 @@ type diskStat struct {
 func (c *CommonEnv) Disk(ctc context.Context) (DiskInfo, error) {
 	var ret DiskInfo
 
-	stat := c.readDisk("/")
+	stat := c.readDisk(c.procRoot)
 	if !stat.valid {
 		return ret, nil
 	}
@@ -80,7 +81,7 @@ func (c *CommonEnv) calcDiskUsagePercent(s diskStat) (float64, bool) {
 }
 
 func (c *CommonEnv) readProcCount() (int, bool) {
-	d, err := os.Open("/proc")
+	d, err := os.Open(filepath.Join(c.procRoot, "proc"))
 	if err != nil {
 		return 0, false
 	}

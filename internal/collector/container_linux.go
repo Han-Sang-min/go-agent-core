@@ -22,7 +22,7 @@ type ContainerEnv struct {
 
 func NewContainerEnv(r *CgroupV2Reader, rootPath string) *ContainerEnv {
 	if rootPath == "" {
-		rootPath = "/proc"
+		rootPath = "/"
 	}
 	return &ContainerEnv{
 		CommonEnv: CommonEnv{procRoot: rootPath},

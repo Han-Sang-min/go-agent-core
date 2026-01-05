@@ -33,7 +33,7 @@ type memStat struct {
 
 func NewHostEnv(root string) *HostEnv {
 	if root == "" {
-		root = "/proc"
+		root = "/"
 	}
 	return &HostEnv{
 		CommonEnv: CommonEnv{procRoot: root}}
@@ -89,7 +89,7 @@ func (e *HostEnv) Mem(ctx context.Context) (MemInfo, error) {
 }
 
 func (e *HostEnv) readMem() memStat {
-	f, err := os.Open(filepath.Join(e.procRoot, "meminfo"))
+	f, err := os.Open(filepath.Join(e.procRoot, "proc", "meminfo"))
 	if err != nil {
 		return memStat{}
 	}
@@ -146,7 +146,7 @@ func (e *HostEnv) calcMemUsagePercent(s memStat) (float64, bool) {
 }
 
 func (e *HostEnv) readCPU() cpuStat {
-	f, err := os.Open(filepath.Join(e.procRoot, "stat"))
+	f, err := os.Open(filepath.Join(e.procRoot, "proc", "stat"))
 	if err != nil {
 		return cpuStat{}
 	}

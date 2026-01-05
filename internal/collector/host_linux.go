@@ -89,7 +89,7 @@ func (e *HostEnv) Mem(ctx context.Context) (MemStats, error) {
 }
 
 func (e *HostEnv) readMem() hostMemSample {
-	f, err := os.Open(filepath.Join(e.procRoot, "proc", "MemStats"))
+	f, err := os.Open(filepath.Join(e.procRoot, "proc", "meminfo"))
 	if err != nil {
 		return hostMemSample{}
 	}

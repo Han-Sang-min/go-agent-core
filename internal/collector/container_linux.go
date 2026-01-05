@@ -5,6 +5,7 @@ package collector
 import (
 	"context"
 	"math"
+	"runtime"
 	"time"
 )
 
@@ -119,8 +120,15 @@ func (e *ContainerEnv) calcCgroupCpu(s cgroupCpuSample) (CPUStats, error) {
 
 	rawPercent := (float64(du) / wallUsec) * 100.0
 
+	var usagePercent float64
+	if limitCores > 0 {
+		usagePercent = rawPercent / limitCores
+	} else {
+		usagePercent = rawPercent / float64(runtime.NumCPU())
+	}
+
 	return CPUStats{
-		UsagePercent: rawPercent,
+		UsagePercent: usagePercent,
 		LimitCores:   limitCores,
 	}, nil
 }

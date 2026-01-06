@@ -7,22 +7,29 @@ import (
 type CPUStats struct {
 	UsagePercent float64
 	LimitCores   float64
+	Valid        bool
 }
 
 type MemStats struct {
 	UsedBytes   uint64
 	LimitBytes  uint64
 	UsedPercent float64
+
+	Valid bool
 }
 
 type DiskStats struct {
 	TotalBytes  uint64
 	UsedBytes   uint64
 	UsedPercent float64
+
+	Valid bool
 }
 
 type ProcStats struct {
 	Count int
+
+	Valid bool
 }
 
 type RuntimeEnv interface {

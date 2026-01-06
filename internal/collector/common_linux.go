@@ -36,20 +36,17 @@ func (c *CommonEnv) Disk(ctc context.Context) (DiskStats, error) {
 	ret.TotalBytes = stat.total
 	ret.UsedBytes = stat.total - stat.avail
 	ret.UsedPercent = percent
+	ret.Valid = true
 
 	return ret, nil
 }
 
 func (c *CommonEnv) Procs(ctc context.Context) (ProcStats, error) {
-	var ret ProcStats
 	count, ok := c.readProcCount()
 	if !ok {
-		return ret, nil
+		return ProcStats{Count: 0, Valid: false}, nil
 	}
-
-	ret.Count = count
-
-	return ret, nil
+	return ProcStats{Count: count, Valid: true}, nil
 }
 
 func (c *CommonEnv) readDisk(path string) diskStat {

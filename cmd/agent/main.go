@@ -96,21 +96,32 @@ func main() {
 			fmt.Printf("Proc Error: %v\n", err)
 		}
 
+		cpuStr := "    N/A"
+		if CPUStats.Valid {
+			cpuStr = fmt.Sprintf("%7.2f%%", CPUStats.UsagePercent)
+		}
+
 		memStr := fmt.Sprintf("%7.2f%%", MemStats.UsedPercent)
 		if math.IsNaN(MemStats.UsedPercent) {
 			memStr = fmt.Sprintf(" N/A (%s)", formatBytes(MemStats.UsedBytes))
 		}
 
+		diskStr := "    N/A"
+		if DiskStats.Valid {
+			diskStr = fmt.Sprintf("%7.2f%%", DiskStats.UsedPercent)
+		}
+
+		procStr := "    N/A"
+		if ProcStats.Valid {
+			procStr = fmt.Sprintf("%6d", ProcStats.Count)
+		}
+
 		ts := time.Now().In(loc).Format("2006-01-02 15:04:05.000 MST")
 		fmt.Printf(
-			"[Seq:%6d] [Time:%s] CPU:%7.2f%%  Mem:%s  Disk:%7.2f%%  Procs:%6d\n",
-			seq,
-			ts,
-			CPUStats.UsagePercent,
-			memStr,
-			DiskStats.UsedPercent,
-			ProcStats.Count,
+			"[Seq:%6d] [Time:%s] CPU:%8s  Mem:%-10s  Disk:%7s  Procs:%6s\n",
+			seq, ts, cpuStr, memStr, diskStr, procStr,
 		)
+
 	}
 
 	if *once {

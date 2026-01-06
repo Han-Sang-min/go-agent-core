@@ -64,6 +64,8 @@ func (e *HostEnv) CPU(ctx context.Context) (CPUStats, error) {
 
 	ret.UsagePercent = percent
 	ret.LimitCores = float64(runtime.NumCPU())
+	ret.Valid = true
+
 	return ret, nil
 }
 
@@ -84,6 +86,7 @@ func (e *HostEnv) Mem(ctx context.Context) (MemStats, error) {
 	}
 
 	ret.UsedPercent = percent
+	ret.Valid = true
 
 	return ret, nil
 }

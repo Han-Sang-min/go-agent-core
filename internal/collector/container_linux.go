@@ -76,6 +76,7 @@ func (e *ContainerEnv) calcCgroupMem(s cgroupMemSample) (MemStats, error) {
 		UsedBytes:   s.usedBytes,
 		LimitBytes:  limitOut,
 		UsedPercent: percent,
+		Valid:       true,
 	}, nil
 }
 
@@ -130,6 +131,7 @@ func (e *ContainerEnv) calcCgroupCpu(s cgroupCpuSample) (CPUStats, error) {
 	return CPUStats{
 		UsagePercent: usagePercent,
 		LimitCores:   limitCores,
+		Valid:        true,
 	}, nil
 }
 

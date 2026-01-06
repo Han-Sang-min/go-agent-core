@@ -76,17 +76,17 @@ func main() {
 
 	collect := func() {
 		seq := counter.Add(1)
-		CPUStats, err := env.CPU(ctx)
+		cpuStats, err := env.CPU(ctx)
 		if err != nil {
 			fmt.Printf("CPU Error: %v\n", err)
 		}
 
-		MemStats, err := env.Mem(ctx)
+		memStats, err := env.Mem(ctx)
 		if err != nil {
 			fmt.Printf("Mem Error: %v\n", err)
 		}
 
-		DiskStats, err := env.Disk(ctx)
+		diskStats, err := env.Disk(ctx)
 		if err != nil {
 			fmt.Printf("Disk Error: %v\n", err)
 		}
@@ -97,18 +97,22 @@ func main() {
 		}
 
 		cpuStr := "    N/A"
-		if CPUStats.Valid {
-			cpuStr = fmt.Sprintf("%7.2f%%", CPUStats.UsagePercent)
+		if cpuStats.Valid {
+			cpuStr = fmt.Sprintf("%7.2f%%", cpuStats.UsagePercent)
 		}
 
-		memStr := fmt.Sprintf("%7.2f%%", MemStats.UsedPercent)
-		if math.IsNaN(MemStats.UsedPercent) {
-			memStr = fmt.Sprintf(" N/A (%s)", formatBytes(MemStats.UsedBytes))
+		memStr := "    N/A"
+		if memStats.Valid {
+			if math.IsNaN(memStats.UsedPercent) {
+				memStr = fmt.Sprintf(" N/A (%s)", formatBytes(memStats.UsedBytes))
+			} else {
+				memStr = fmt.Sprintf("%7.2f%%", memStats.UsedPercent)
+			}
 		}
 
 		diskStr := "    N/A"
-		if DiskStats.Valid {
-			diskStr = fmt.Sprintf("%7.2f%%", DiskStats.UsedPercent)
+		if diskStats.Valid {
+			diskStr = fmt.Sprintf("%7.2f%%", diskStats.UsedPercent)
 		}
 
 		procStr := "    N/A"

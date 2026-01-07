@@ -10,7 +10,7 @@ import (
 )
 
 type Handler struct {
-	pb.UnimplementCollectorServiceServer
+	pb.UnimplementedCollectorServiceServer
 }
 
 func NewHandler() *Handler {

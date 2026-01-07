@@ -23,7 +23,7 @@ func newGRPCServer(cfg Config) (*grpcServer, error) {
 
 	s := grpc.NewServer()
 
-	pb.ResisterCollectorServiceServer(s, NewHandler())
+	pb.RegisterCollectorServiceServer(s, NewHandler())
 
 	return &grpcServer{
 		addr: cfg.ListenAddr,

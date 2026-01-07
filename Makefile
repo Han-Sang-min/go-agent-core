@@ -3,7 +3,7 @@
 # ====== Variables ======
 AGENT_BIN=bin/agent
 COLLECTOR_BIN=bin/collector
-PROTO_BIR=proto
+PROTO_DIR=proto
 
 # ====== Proto ======
 proto:

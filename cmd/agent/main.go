@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"go-agent/internal/collector"
+	"go-agent/internal/agent"
 	"go-agent/internal/config"
 	"math"
 	"os"
@@ -58,7 +58,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var env collector.RuntimeEnv = collector.DetectEnv()
+	var env agent.RuntimeEnv = agent.DetectEnv()
 	fmt.Printf("Detected Environment: %s\n", env.Kind())
 	fmt.Printf("Config interval: %s\n", cfg.Interval.Duration)
 

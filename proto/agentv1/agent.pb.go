@@ -22,6 +22,94 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type RegisterRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Hostname      string                 `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterRequest) Reset() {
+	*x = RegisterRequest{}
+	mi := &file_proto_agent_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterRequest) ProtoMessage() {}
+
+func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_agent_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
+func (*RegisterRequest) Descriptor() ([]byte, []int) {
+	return file_proto_agent_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *RegisterRequest) GetHostname() string {
+	if x != nil {
+		return x.Hostname
+	}
+	return ""
+}
+
+type RegisterResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AgentId       string                 `protobuf:"bytes,1,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterResponse) Reset() {
+	*x = RegisterResponse{}
+	mi := &file_proto_agent_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterResponse) ProtoMessage() {}
+
+func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_agent_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
+func (*RegisterResponse) Descriptor() ([]byte, []int) {
+	return file_proto_agent_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *RegisterResponse) GetAgentId() string {
+	if x != nil {
+		return x.AgentId
+	}
+	return ""
+}
+
 type Heartbeat struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgentId       string                 `protobuf:"bytes,1,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
@@ -33,7 +121,7 @@ type Heartbeat struct {
 
 func (x *Heartbeat) Reset() {
 	*x = Heartbeat{}
-	mi := &file_proto_agent_proto_msgTypes[0]
+	mi := &file_proto_agent_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +133,7 @@ func (x *Heartbeat) String() string {
 func (*Heartbeat) ProtoMessage() {}
 
 func (x *Heartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[0]
+	mi := &file_proto_agent_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +146,7 @@ func (x *Heartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Heartbeat.ProtoReflect.Descriptor instead.
 func (*Heartbeat) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{0}
+	return file_proto_agent_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Heartbeat) GetAgentId() string {
@@ -93,7 +181,7 @@ type Metric struct {
 
 func (x *Metric) Reset() {
 	*x = Metric{}
-	mi := &file_proto_agent_proto_msgTypes[1]
+	mi := &file_proto_agent_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -105,7 +193,7 @@ func (x *Metric) String() string {
 func (*Metric) ProtoMessage() {}
 
 func (x *Metric) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[1]
+	mi := &file_proto_agent_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -118,7 +206,7 @@ func (x *Metric) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Metric.ProtoReflect.Descriptor instead.
 func (*Metric) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{1}
+	return file_proto_agent_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Metric) GetName() string {
@@ -153,7 +241,7 @@ type MetricBatch struct {
 
 func (x *MetricBatch) Reset() {
 	*x = MetricBatch{}
-	mi := &file_proto_agent_proto_msgTypes[2]
+	mi := &file_proto_agent_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -165,7 +253,7 @@ func (x *MetricBatch) String() string {
 func (*MetricBatch) ProtoMessage() {}
 
 func (x *MetricBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[2]
+	mi := &file_proto_agent_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -178,7 +266,7 @@ func (x *MetricBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MetricBatch.ProtoReflect.Descriptor instead.
 func (*MetricBatch) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{2}
+	return file_proto_agent_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MetricBatch) GetAgentId() string {
@@ -212,7 +300,7 @@ type Ack struct {
 
 func (x *Ack) Reset() {
 	*x = Ack{}
-	mi := &file_proto_agent_proto_msgTypes[3]
+	mi := &file_proto_agent_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -224,7 +312,7 @@ func (x *Ack) String() string {
 func (*Ack) ProtoMessage() {}
 
 func (x *Ack) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[3]
+	mi := &file_proto_agent_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -237,7 +325,7 @@ func (x *Ack) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Ack.ProtoReflect.Descriptor instead.
 func (*Ack) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{3}
+	return file_proto_agent_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Ack) GetOk() bool {
@@ -258,7 +346,11 @@ var File_proto_agent_proto protoreflect.FileDescriptor
 
 const file_proto_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/agent.proto\x12\bagent.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"r\n" +
+	"\x11proto/agent.proto\x12\bagent.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"-\n" +
+	"\x0fRegisterRequest\x12\x1a\n" +
+	"\bhostname\x18\x01 \x01(\tR\bhostname\"-\n" +
+	"\x10RegisterResponse\x12\x19\n" +
+	"\bagent_id\x18\x01 \x01(\tR\aagentId\"r\n" +
 	"\tHeartbeat\x12\x19\n" +
 	"\bagent_id\x18\x01 \x01(\tR\aagentId\x12\x1a\n" +
 	"\bhostname\x18\x02 \x01(\tR\bhostname\x12.\n" +
@@ -273,8 +365,9 @@ const file_proto_agent_proto_rawDesc = "" +
 	"\ametrics\x18\x03 \x03(\v2\x10.agent.v1.MetricR\ametrics\"/\n" +
 	"\x03Ack\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2|\n" +
-	"\x10CollectorService\x123\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xbf\x01\n" +
+	"\x10CollectorService\x12A\n" +
+	"\bRegister\x12\x19.agent.v1.RegisterRequest\x1a\x1a.agent.v1.RegisterResponse\x123\n" +
 	"\rSendHeartbeat\x12\x13.agent.v1.Heartbeat\x1a\r.agent.v1.Ack\x123\n" +
 	"\vSendMetrics\x12\x15.agent.v1.MetricBatch\x1a\r.agent.v1.AckB\x17Z\x15proto/agentv1;agentv1b\x06proto3"
 
@@ -290,24 +383,28 @@ func file_proto_agent_proto_rawDescGZIP() []byte {
 	return file_proto_agent_proto_rawDescData
 }
 
-var file_proto_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_agent_proto_goTypes = []any{
-	(*Heartbeat)(nil),           // 0: agent.v1.Heartbeat
-	(*Metric)(nil),              // 1: agent.v1.Metric
-	(*MetricBatch)(nil),         // 2: agent.v1.MetricBatch
-	(*Ack)(nil),                 // 3: agent.v1.Ack
-	(*timestamp.Timestamp)(nil), // 4: google.protobuf.Timestamp
+	(*RegisterRequest)(nil),     // 0: agent.v1.RegisterRequest
+	(*RegisterResponse)(nil),    // 1: agent.v1.RegisterResponse
+	(*Heartbeat)(nil),           // 2: agent.v1.Heartbeat
+	(*Metric)(nil),              // 3: agent.v1.Metric
+	(*MetricBatch)(nil),         // 4: agent.v1.MetricBatch
+	(*Ack)(nil),                 // 5: agent.v1.Ack
+	(*timestamp.Timestamp)(nil), // 6: google.protobuf.Timestamp
 }
 var file_proto_agent_proto_depIdxs = []int32{
-	4, // 0: agent.v1.Heartbeat.time:type_name -> google.protobuf.Timestamp
-	4, // 1: agent.v1.MetricBatch.time:type_name -> google.protobuf.Timestamp
-	1, // 2: agent.v1.MetricBatch.metrics:type_name -> agent.v1.Metric
-	0, // 3: agent.v1.CollectorService.SendHeartbeat:input_type -> agent.v1.Heartbeat
-	2, // 4: agent.v1.CollectorService.SendMetrics:input_type -> agent.v1.MetricBatch
-	3, // 5: agent.v1.CollectorService.SendHeartbeat:output_type -> agent.v1.Ack
-	3, // 6: agent.v1.CollectorService.SendMetrics:output_type -> agent.v1.Ack
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
+	6, // 0: agent.v1.Heartbeat.time:type_name -> google.protobuf.Timestamp
+	6, // 1: agent.v1.MetricBatch.time:type_name -> google.protobuf.Timestamp
+	3, // 2: agent.v1.MetricBatch.metrics:type_name -> agent.v1.Metric
+	0, // 3: agent.v1.CollectorService.Register:input_type -> agent.v1.RegisterRequest
+	2, // 4: agent.v1.CollectorService.SendHeartbeat:input_type -> agent.v1.Heartbeat
+	4, // 5: agent.v1.CollectorService.SendMetrics:input_type -> agent.v1.MetricBatch
+	1, // 6: agent.v1.CollectorService.Register:output_type -> agent.v1.RegisterResponse
+	5, // 7: agent.v1.CollectorService.SendHeartbeat:output_type -> agent.v1.Ack
+	5, // 8: agent.v1.CollectorService.SendMetrics:output_type -> agent.v1.Ack
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -324,7 +421,7 @@ func file_proto_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_agent_proto_rawDesc), len(file_proto_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

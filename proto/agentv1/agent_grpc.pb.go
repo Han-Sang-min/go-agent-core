@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	CollectorService_Register_FullMethodName      = "/agent.v1.CollectorService/Register"
 	CollectorService_SendHeartbeat_FullMethodName = "/agent.v1.CollectorService/SendHeartbeat"
 	CollectorService_SendMetrics_FullMethodName   = "/agent.v1.CollectorService/SendMetrics"
 )
@@ -27,6 +28,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CollectorServiceClient interface {
+	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	SendHeartbeat(ctx context.Context, in *Heartbeat, opts ...grpc.CallOption) (*Ack, error)
 	SendMetrics(ctx context.Context, in *MetricBatch, opts ...grpc.CallOption) (*Ack, error)
 }
@@ -37,6 +39,16 @@ type collectorServiceClient struct {
 
 func NewCollectorServiceClient(cc grpc.ClientConnInterface) CollectorServiceClient {
 	return &collectorServiceClient{cc}
+}
+
+func (c *collectorServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterResponse)
+	err := c.cc.Invoke(ctx, CollectorService_Register_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *collectorServiceClient) SendHeartbeat(ctx context.Context, in *Heartbeat, opts ...grpc.CallOption) (*Ack, error) {
@@ -63,6 +75,7 @@ func (c *collectorServiceClient) SendMetrics(ctx context.Context, in *MetricBatc
 // All implementations must embed UnimplementedCollectorServiceServer
 // for forward compatibility.
 type CollectorServiceServer interface {
+	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
 	SendHeartbeat(context.Context, *Heartbeat) (*Ack, error)
 	SendMetrics(context.Context, *MetricBatch) (*Ack, error)
 	mustEmbedUnimplementedCollectorServiceServer()
@@ -75,6 +88,9 @@ type CollectorServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCollectorServiceServer struct{}
 
+func (UnimplementedCollectorServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
+}
 func (UnimplementedCollectorServiceServer) SendHeartbeat(context.Context, *Heartbeat) (*Ack, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendHeartbeat not implemented")
 }
@@ -100,6 +116,24 @@ func RegisterCollectorServiceServer(s grpc.ServiceRegistrar, srv CollectorServic
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&CollectorService_ServiceDesc, srv)
+}
+
+func _CollectorService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CollectorServiceServer).Register(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CollectorService_Register_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CollectorServiceServer).Register(ctx, req.(*RegisterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _CollectorService_SendHeartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -145,6 +179,10 @@ var CollectorService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "agent.v1.CollectorService",
 	HandlerType: (*CollectorServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Register",
+			Handler:    _CollectorService_Register_Handler,
+		},
 		{
 			MethodName: "SendHeartbeat",
 			Handler:    _CollectorService_SendHeartbeat_Handler,

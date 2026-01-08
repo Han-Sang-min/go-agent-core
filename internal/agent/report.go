@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go-agent/interanl/transport"
+	"go-agent/internal/transport"
 	agentv1 "go-agent/proto/agentv1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

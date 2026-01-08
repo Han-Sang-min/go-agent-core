@@ -6,9 +6,13 @@ option go_package = "proto/agentv1;agentv1";
 import "google/protobuf/timestamp.proto";
 
 service CollectorService {
-    rpc SendHeartbeat(Heartbeat) returns (Ack);
-    rpc SendMetrics(MetricBatch) returns (Ack);
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc SendHeartbeat(Heartbeat) returns (Ack);
+  rpc SendMetrics(MetricBatch) returns (Ack);
 }
+
+message RegisterRequest { string hostname = 1; }
+message RegisterResponse { string agent_id = 1; }
 
 message Heartbeat {
     string agent_id = 1;

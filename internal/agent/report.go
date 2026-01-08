@@ -4,8 +4,13 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"os"
 	"sync/atomic"
 	"time"
+
+	"go-agent/interanl/transport"
+	agentv1 "go-agent/proto/agentv1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -39,6 +44,62 @@ func formatBytes(b uint64) string {
 	default:
 		return fmt.Sprintf("%dB", b)
 	}
+}
+
+type GRPCOut struct {
+	cli *transport.Client
+}
+
+func NewGRPCOut(ctx context.Context, addr string) (*GRPCOut, error) {
+	cli, err := transport.New(ctx, transport.Options{Addr: addr})
+	if err != nil {
+		return nil, err
+	}
+	return &GRPCOut{cli: cli}, nil
+}
+
+func (o *GRPCOut) SendHeartbeat(ctx context.Context, agentID string) error {
+	hostname, _ := os.Hostname()
+
+	hb := &agentv1.Heartbeat{
+		AgentId:  agentID,
+		Hostname: hostname,
+		Time:     timestamppb.Now(),
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	return o.cli.SendHeartbeat(ctx, hb)
+}
+
+type MetricPoint struct {
+	Name  string
+	Value float64
+	Unit  string
+}
+
+func (o *GRPCOut) SendMetrics(ctx context.Context, agentID string, metrics []MetricPoint) error {
+	pbMetrics := make([]*agentv1.Metric, 0, len(metrics))
+
+	for _, m := range metrics {
+		pbMetrics = append(pbMetrics, &agentv1.Metric{
+			Name:  m.Name,
+			Value: m.Value,
+			Unit:  m.Unit,
+		})
+	}
+
+	mb := &agentv1.MetricBatch{
+		AgentId: agentID,
+		Time:    timestamppb.Now(),
+		Metrics: pbMetrics,
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	return o.cli.SendMetrics(ctx, mb)
 }
 
 func ConsolOut(ctx context.Context, env RuntimeEnv) {

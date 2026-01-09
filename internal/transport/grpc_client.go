@@ -16,7 +16,7 @@ type Client struct {
 	cc  *grpc.ClientConn
 	api pb.CollectorServiceClient
 
-	id string
+	Id *pb.RegisterResponse
 }
 
 type Options struct {
@@ -54,8 +54,9 @@ func (c *Client) Close() error {
 	return c.cc.Close()
 }
 
-func (c *Client) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	c.id, err := c.api.Register(ctx, req)
+func (c *Client) Register(ctx context.Context, req *pb.RegisterRequest) error {
+	id, err := c.api.Register(ctx, req)
+	c.Id = id
 	return err
 }
 

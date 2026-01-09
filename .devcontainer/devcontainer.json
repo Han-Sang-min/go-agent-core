@@ -3,7 +3,7 @@
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/devcontainers/features/go:1": { "version": "1.22" },
+    "ghcr.io/devcontainers/features/go:1": { "version": "1.24" },
     "ghcr.io/devcontainers/features/python:1": { "version": "3.11" }
   },
   "postCreateCommand": "bash -lc 'set -euo pipefail; sudo apt-get update; sudo apt-get install -y make curl protobuf-compiler; go install google.golang.org/protobuf/cmd/protoc-gen-go@latest; go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest; export PATH=\"$PATH:/home/vscode/go/bin\"; echo \"protoc=$(protoc --version)\"; echo \"protoc-gen-go=$(protoc-gen-go --version)\"; echo \"protoc-gen-go-grpc=$(protoc-gen-go-grpc --version)\"; make proto; go mod tidy'",

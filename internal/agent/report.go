@@ -56,12 +56,19 @@ func NewGRPCOut(ctx context.Context, addr string) (*GRPCOut, error) {
 		return nil, err
 	}
 	hostname, _ := os.Hostname()
-	cli.Register(ctx, &pb.RegisterRequest{Hostname: hostname})
+	if err := cli.Register(ctx, &pb.RegisterRequest{Hostname: hostname}); err != nil {
+		_ = cli.Close()
+		return nil, fmt.Errorf("register failed: %w", err)
+	}
 
 	return &GRPCOut{cli: cli}, nil
 }
 
-func (o *GRPCOut) SendHeartbeat(ctx context.Context, agentID string) error {
+func (o *GRPCOut) SendHeartbeat(ctx context.Context) error {
+	if o.cli == nil {
+		return nil
+	}
+	agentID := o.cli.Id.AgentId
 	hostname, _ := os.Hostname()
 
 	hb := &pb.Heartbeat{
@@ -82,7 +89,11 @@ type MetricPoint struct {
 	Unit  string
 }
 
-func (o *GRPCOut) SendMetrics(ctx context.Context, agentID string, metrics []MetricPoint) error {
+func (o *GRPCOut) SendMetrics(ctx context.Context, metrics []MetricPoint) error {
+	if o.cli == nil {
+		return nil
+	}
+	agentID := o.cli.Id.AgentId
 	pbMetrics := make([]*pb.Metric, 0, len(metrics))
 
 	for _, m := range metrics {

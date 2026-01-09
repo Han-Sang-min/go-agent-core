@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	agentv1 "go-agent/proto/agentv1"
+	pb "go-agent/proto/agentv1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
@@ -14,7 +14,9 @@ import (
 
 type Client struct {
 	cc  *grpc.ClientConn
-	api agentv1.CollectorServiceClient
+	api pb.CollectorServiceClient
+
+	id string
 }
 
 type Options struct {
@@ -44,7 +46,7 @@ func New(ctx context.Context, opt Options) (*Client, error) {
 
 	return &Client{
 		cc:  cc,
-		api: agentv1.NewCollectorServiceClient(cc),
+		api: pb.NewCollectorServiceClient(cc),
 	}, nil
 }
 
@@ -52,12 +54,17 @@ func (c *Client) Close() error {
 	return c.cc.Close()
 }
 
-func (c *Client) SendHeartbeat(ctx context.Context, hb *agentv1.Heartbeat) error {
+func (c *Client) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+	c.id, err := c.api.Register(ctx, req)
+	return err
+}
+
+func (c *Client) SendHeartbeat(ctx context.Context, hb *pb.Heartbeat) error {
 	_, err := c.api.SendHeartbeat(ctx, hb)
 	return err
 }
 
-func (c *Client) SendMetrics(ctx context.Context, mb *agentv1.MetricBatch) error {
+func (c *Client) SendMetrics(ctx context.Context, mb *pb.MetricBatch) error {
 	_, err := c.api.SendMetrics(ctx, mb)
 	return err
 }

@@ -30,7 +30,11 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	grpc := agent.NewGRPCOut(ctx)
+	grpc, err := agent.NewGRPCOut(ctx, "127.0.0.1:50051")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "grpc agent load failed: %v\n", err)
+		os.Exit(1)
+	}
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
@@ -55,6 +59,7 @@ func main() {
 			return
 		case <-ticker.C:
 			agent.ConsolOut(ctx, env)
+			grpc.SendHeartbeat(ctx)
 		}
 	}
 }

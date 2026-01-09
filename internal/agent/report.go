@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"go-agent/internal/transport"
-	agentv1 "go-agent/proto/agentv1"
+	pb "go-agent/proto/agentv1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -55,13 +55,16 @@ func NewGRPCOut(ctx context.Context, addr string) (*GRPCOut, error) {
 	if err != nil {
 		return nil, err
 	}
+	hostname, _ := os.Hostname()
+	cli.Register(ctx, &pb.RegisterRequest{Hostname: hostname})
+
 	return &GRPCOut{cli: cli}, nil
 }
 
 func (o *GRPCOut) SendHeartbeat(ctx context.Context, agentID string) error {
 	hostname, _ := os.Hostname()
 
-	hb := &agentv1.Heartbeat{
+	hb := &pb.Heartbeat{
 		AgentId:  agentID,
 		Hostname: hostname,
 		Time:     timestamppb.Now(),
@@ -80,17 +83,17 @@ type MetricPoint struct {
 }
 
 func (o *GRPCOut) SendMetrics(ctx context.Context, agentID string, metrics []MetricPoint) error {
-	pbMetrics := make([]*agentv1.Metric, 0, len(metrics))
+	pbMetrics := make([]*pb.Metric, 0, len(metrics))
 
 	for _, m := range metrics {
-		pbMetrics = append(pbMetrics, &agentv1.Metric{
+		pbMetrics = append(pbMetrics, &pb.Metric{
 			Name:  m.Name,
 			Value: m.Value,
 			Unit:  m.Unit,
 		})
 	}
 
-	mb := &agentv1.MetricBatch{
+	mb := &pb.MetricBatch{
 		AgentId: agentID,
 		Time:    timestamppb.Now(),
 		Metrics: pbMetrics,

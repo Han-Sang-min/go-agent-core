@@ -635,7 +635,7 @@ const file_proto_agent_proto_rawDesc = "" +
 	"\bRegister\x12\x19.agent.v1.RegisterRequest\x1a\x1a.agent.v1.RegisterResponse\x12A\n" +
 	"\rSendHeartbeat\x12\x13.agent.v1.Heartbeat\x1a\x1b.agent.v1.HeartbeatResponse\x123\n" +
 	"\vSendMetrics\x12\x15.agent.v1.MetricBatch\x1a\r.agent.v1.Ack\x12=\n" +
-	"\x13ReportCommandResult\x12\x17.agent.v1.CommandResult\x1a\r.agent.v1.AckB\x17Z\x15proto/agentv1;agentv1b\x06proto3"
+	"\x13ReportCommandResult\x12\x17.agent.v1.CommandResult\x1a\r.agent.v1.AckB Z\x1ego-agent/proto/agentv1;agentv1b\x06proto3"
 
 var (
 	file_proto_agent_proto_rawDescOnce sync.Once

@@ -33,7 +33,8 @@ func main() {
 	grpc, err := agent.NewGRPCOut(ctx, "127.0.0.1:50051")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "grpc agent load failed: %v\n", err)
-		os.Exit(1)
+	} else {
+		defer grpc.Close()
 	}
 
 	sigCh := make(chan os.Signal, 1)
@@ -46,7 +47,8 @@ func main() {
 	fmt.Print("Agent Start.\n")
 
 	if *once {
-		agent.ConsolOut(ctx, env)
+		c := agent.Collect(ctx, env)
+		agent.ConsoleOut(ctx, env, c)
 		fmt.Println("Agent Stop.")
 		return
 	}
@@ -58,8 +60,12 @@ func main() {
 			fmt.Println("Agent Stop.")
 			return
 		case <-ticker.C:
-			agent.ConsolOut(ctx, env)
-			grpc.SendHeartbeat(ctx)
+			c := agent.Collect(ctx, env)
+			agent.ConsoleOut(ctx, env, c)
+			if grpc != nil {
+				grpc.SendHeartbeat(ctx)
+				agent.GRPCSend(ctx, env, grpc, c)
+			}
 		}
 	}
 }

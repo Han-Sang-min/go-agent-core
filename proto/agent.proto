@@ -7,8 +7,9 @@ import "google/protobuf/timestamp.proto";
 
 service CollectorService {
   rpc Register(RegisterRequest) returns (RegisterResponse);
-  rpc SendHeartbeat(Heartbeat) returns (Ack);
+  rpc SendHeartbeat(Heartbeat) returns (HeartbeatResponse);
   rpc SendMetrics(MetricBatch) returns (Ack);
+  rpc ReportCommandResult(CommandResult) returns (Ack);
 }
 
 message RegisterRequest { string hostname = 1; }
@@ -18,6 +19,33 @@ message Heartbeat {
     string agent_id = 1;
     string hostname = 2;
     google.protobuf.Timestamp time = 3;
+}
+
+message HeartbeatResponse {
+  bool ok = 1;
+  repeated Command commands = 2;
+}
+
+message Command {
+  string command_id = 1;
+  string name = 2;
+  string args_json = 3;
+}
+
+message CommandResult {
+  string agent_id = 1;
+  string command_id = 2;
+  google.protobuf.Timestamp time = 3;
+
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    OK = 1;
+    ERROR = 2;
+  }
+  Status status = 4;
+
+  string output = 5;
+  string error = 6;
 }
 
 message Metric {

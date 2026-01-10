@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"log"
 	"math"
 	"os"
 	"sync/atomic"
@@ -18,6 +19,16 @@ var (
 )
 
 var counter atomic.Int64
+
+type Collected struct {
+	Seq int64
+	TS  time.Time
+
+	CPU  CPUStats
+	Mem  MemStats
+	Disk DiskStats
+	Proc ProcStats
+}
 
 func mustLoadLocation(src string) *time.Location {
 	l, err := time.LoadLocation(src)
@@ -48,6 +59,13 @@ func formatBytes(b uint64) string {
 
 type GRPCOut struct {
 	cli *transport.Client
+}
+
+func (o *GRPCOut) Close() error {
+	if o == nil || o.cli == nil {
+		return nil
+	}
+	return o.cli.Close()
 }
 
 func NewGRPCOut(ctx context.Context, addr string) (*GRPCOut, error) {
@@ -116,55 +134,101 @@ func (o *GRPCOut) SendMetrics(ctx context.Context, metrics []MetricPoint) error 
 	return o.cli.SendMetrics(ctx, mb)
 }
 
-func ConsolOut(ctx context.Context, env RuntimeEnv) {
+func Collect(ctx context.Context, env RuntimeEnv) Collected {
 	seq := counter.Add(1)
-	cpuStats, err := env.CPU(ctx)
-	if err != nil {
+	ts := time.Now().In(loc)
+
+	var out Collected
+	out.Seq, out.TS = seq, ts
+
+	if cpu, err := env.CPU(ctx); err != nil {
 		fmt.Printf("CPU Error: %v\n", err)
+	} else {
+		out.CPU = cpu
 	}
 
-	memStats, err := env.Mem(ctx)
-	if err != nil {
+	if mem, err := env.Mem(ctx); err != nil {
 		fmt.Printf("Mem Error: %v\n", err)
+	} else {
+		out.Mem = mem
 	}
 
-	diskStats, err := env.Disk(ctx)
-	if err != nil {
+	if disk, err := env.Disk(ctx); err != nil {
 		fmt.Printf("Disk Error: %v\n", err)
+	} else {
+		out.Disk = disk
 	}
 
-	ProcStats, err := env.Procs(ctx)
-	if err != nil {
+	if proc, err := env.Procs(ctx); err != nil {
 		fmt.Printf("Proc Error: %v\n", err)
+	} else {
+		out.Proc = proc
 	}
 
+	return out
+}
+
+func ToMetricPoints(c Collected) []MetricPoint {
+	metrics := make([]MetricPoint, 0, 8)
+
+	if c.CPU.Valid {
+		metrics = append(metrics, MetricPoint{Name: "cpu.usage", Value: c.CPU.UsagePercent, Unit: "%"})
+	}
+
+	if c.Mem.Valid {
+		if !math.IsNaN(c.Mem.UsedPercent) {
+			metrics = append(metrics, MetricPoint{Name: "mem.used_percent", Value: c.Mem.UsedPercent, Unit: "%"})
+		}
+		metrics = append(metrics, MetricPoint{Name: "mem.used_bytes", Value: float64(c.Mem.UsedBytes), Unit: "bytes"})
+	}
+
+	if c.Disk.Valid {
+		metrics = append(metrics, MetricPoint{Name: "disk.used_percent", Value: c.Disk.UsedPercent, Unit: "%"})
+	}
+
+	if c.Proc.Valid {
+		metrics = append(metrics, MetricPoint{Name: "proc.count", Value: float64(c.Proc.Count), Unit: "count"})
+	}
+
+	return metrics
+}
+
+func GRPCSend(ctx context.Context, env RuntimeEnv, out *GRPCOut, c Collected) {
+	metrics := ToMetricPoints(c)
+	if err := out.SendMetrics(ctx, metrics); err != nil {
+		log.Printf("[metrics] send failed: %v", err)
+	}
+}
+
+func ConsoleOut(ctx context.Context, env RuntimeEnv, c Collected) {
 	cpuStr := "    N/A"
-	if cpuStats.Valid {
-		cpuStr = fmt.Sprintf("%7.2f%%", cpuStats.UsagePercent)
+	if c.CPU.Valid {
+		cpuStr = fmt.Sprintf("%7.2f%%", c.CPU.UsagePercent)
 	}
 
 	memStr := "    N/A"
-	if memStats.Valid {
-		if math.IsNaN(memStats.UsedPercent) {
-			memStr = fmt.Sprintf(" N/A (%s)", formatBytes(memStats.UsedBytes))
+	if c.Mem.Valid {
+		if math.IsNaN(c.Mem.UsedPercent) {
+			memStr = fmt.Sprintf(" N/A (%s)", formatBytes(c.Mem.UsedBytes))
 		} else {
-			memStr = fmt.Sprintf("%7.2f%%", memStats.UsedPercent)
+			memStr = fmt.Sprintf("%7.2f%%", c.Mem.UsedPercent)
 		}
 	}
 
 	diskStr := "    N/A"
-	if diskStats.Valid {
-		diskStr = fmt.Sprintf("%7.2f%%", diskStats.UsedPercent)
+	if c.Disk.Valid {
+		diskStr = fmt.Sprintf("%7.2f%%", c.Disk.UsedPercent)
 	}
 
 	procStr := "    N/A"
-	if ProcStats.Valid {
-		procStr = fmt.Sprintf("%6d", ProcStats.Count)
+	if c.Proc.Valid {
+		procStr = fmt.Sprintf("%6d", c.Proc.Count)
 	}
 
-	ts := time.Now().In(loc).Format("2006-01-02 15:04:05.000 MST")
+	ts := c.TS.Format("2006-01-02 15:04:05.000 MST")
+
 	fmt.Printf(
 		"[Seq:%6d] [Time:%s] CPU:%8s  Mem:%-10s  Disk:%7s  Procs:%6s\n",
-		seq, ts, cpuStr, memStr, diskStr, procStr,
+		c.Seq, ts, cpuStr, memStr, diskStr, procStr,
 	)
 }

@@ -17,7 +17,6 @@ var (
 	loc = mustLoadLocation("Asia/Seoul")
 )
 
-// 커맨드는 어떤식으로 보내는가? 모았다가? 커맨드는 애초에 collector가 반사적으로 보내는건가?
 type AgentState struct {
 	FirstSeen time.Time
 	LastSeen  time.Time
@@ -90,33 +89,66 @@ func (h *Handler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Re
 	h.agents[agentID] = &AgentState{
 		FirstSeen: now,
 		LastSeen:  now,
+		BootId:    uuid.NewString(),
+		Pending: []*pb.Command{
+			{
+				CommandId: "boot-" + agentID,
+				Name:      "ping",
+				ArgsJson:  `{}`,
+			},
+		},
 	}
 	h.mu.Unlock()
 
 	log.Printf("[register] agent_id=%s host=%s", agentID, req.GetHostname())
-
-	return &pb.RegisterResponse{
-		AgentId: agentID,
-	}, nil
+	return &pb.RegisterResponse{AgentId: agentID}, nil
 }
 
-func (h *Handler) SendHeartbeat(ctx context.Context, req *pb.Heartbeat) (*pb.Ack, error) {
-	agentId := req.GetAgentId()
-	if req.GetAgentId() == "" {
+func (h *Handler) ReportCommandResult(ctx context.Context, res *pb.CommandResult) (*pb.Ack, error) {
+	if res.GetAgentId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "agent_id is required")
+	}
+	if res.GetCommandId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "command_id is required")
+	}
+
+	log.Printf("[cmd-result] agent_id=%s cmd_id=%s status=%s output=%q err=%q",
+		res.GetAgentId(),
+		res.GetCommandId(),
+		res.GetStatus().String(),
+		res.GetOutput(),
+		res.GetError(),
+	)
+
+	return &pb.Ack{Ok: true, Message: "command result received"}, nil
+}
+
+func (h *Handler) SendHeartbeat(ctx context.Context, req *pb.Heartbeat) (*pb.HeartbeatResponse, error) {
+	agentID := req.GetAgentId()
+	if agentID == "" {
 		return nil, status.Error(codes.InvalidArgument, "agent_id is required")
 	}
 
 	h.mu.Lock()
-	st, ok := h.agents[agentId]
+	st, ok := h.agents[agentID]
 	if !ok {
 		h.mu.Unlock()
 		return nil, status.Error(codes.NotFound, "unknown agent_id")
 	}
+
 	st.LastSeen = time.Now()
+
+	cmds := st.Pending
+	st.Pending = nil
+
 	h.mu.Unlock()
 
-	log.Printf("[hb] agent_id=%s host=%s", req.GetAgentId(), req.GetHostname())
-	return &pb.Ack{Ok: true, Message: "heartbeat received"}, nil
+	log.Printf("[hb] agent_id=%s host=%s cmds=%d", agentID, req.GetHostname(), len(cmds))
+
+	return &pb.HeartbeatResponse{
+		Ok:       true,
+		Commands: cmds,
+	}, nil
 }
 
 func (h *Handler) SendMetrics(ctx context.Context, req *pb.MetricBatch) (*pb.Ack, error) {

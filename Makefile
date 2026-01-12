@@ -13,9 +13,6 @@ proto:
 		$(PROTO_DIR)/*.proto
 
 # ====== Build ======
-build: build-agent
-	go build -o bin/agent ./cmd/agent
-
 build-agent: proto
 	go build -o $(AGENT_BIN) ./cmd/agent
 

@@ -23,7 +23,7 @@ type Options struct {
 	Addr string
 }
 
-func New(ctx context.Context, opt Options) (*Client, error) {
+func New(opt Options) (*Client, error) {
 	if opt.Addr == "" {
 		return nil, fmt.Errorf("empty grpc addr")
 	}
@@ -60,8 +60,13 @@ func (c *Client) Register(ctx context.Context, req *pb.RegisterRequest) error {
 	return err
 }
 
-func (c *Client) SendHeartbeat(ctx context.Context, hb *pb.Heartbeat) error {
-	_, err := c.api.SendHeartbeat(ctx, hb)
+func (c *Client) SendHeartbeat(ctx context.Context, hb *pb.Heartbeat) (*pb.HeartbeatResponse, error) {
+	resp, err := c.api.SendHeartbeat(ctx, hb)
+	return resp, err
+}
+
+func (c *Client) ReportCommandResult(ctx context.Context, res *pb.CommandResult) error {
+	_, err := c.api.ReportCommandResult(ctx, res)
 	return err
 }
 

@@ -61,15 +61,8 @@ type GRPCOut struct {
 	cli *transport.Client
 }
 
-func (o *GRPCOut) Close() error {
-	if o == nil || o.cli == nil {
-		return nil
-	}
-	return o.cli.Close()
-}
-
 func NewGRPCOut(ctx context.Context, addr string) (*GRPCOut, error) {
-	cli, err := transport.New(ctx, transport.Options{Addr: addr})
+	cli, err := transport.New(transport.Options{Addr: addr})
 	if err != nil {
 		return nil, err
 	}
@@ -82,11 +75,25 @@ func NewGRPCOut(ctx context.Context, addr string) (*GRPCOut, error) {
 	return &GRPCOut{cli: cli}, nil
 }
 
-func (o *GRPCOut) SendHeartbeat(ctx context.Context) error {
-	if o.cli == nil {
+func (o *GRPCOut) Close() error {
+	if o == nil || o.cli == nil {
 		return nil
 	}
-	agentID := o.cli.Id.AgentId
+	return o.cli.Close()
+}
+
+func (o *GRPCOut) AgentID() string {
+	if o == nil || o.cli == nil || o.cli.Id == nil {
+		return ""
+	}
+	return o.cli.Id.AgentId
+}
+
+func (o *GRPCOut) SendHeartbeat(ctx context.Context) (*pb.HeartbeatResponse, error) {
+	if o.cli == nil {
+		return nil, nil
+	}
+	agentID := o.AgentID()
 	hostname, _ := os.Hostname()
 
 	hb := &pb.Heartbeat{
@@ -101,6 +108,55 @@ func (o *GRPCOut) SendHeartbeat(ctx context.Context) error {
 	return o.cli.SendHeartbeat(ctx, hb)
 }
 
+func (o *GRPCOut) HandleAndReportCommand(ctx context.Context, cmd *pb.Command) error {
+	if o.cli == nil {
+		return nil
+	}
+	res := o.handleCommand(cmd)
+	return o.ReportCommandResult(ctx, cmd, res)
+}
+
+func (o *GRPCOut) ReportCommandResult(ctx context.Context, cmd *pb.Command, out CommandOutcome) error {
+	if o == nil || o.cli == nil {
+		return nil
+	}
+
+	res := &pb.CommandResult{
+		AgentId:   o.AgentID(),
+		CommandId: "",
+		Time:      timestamppb.Now(),
+		Status:    out.Status,
+		Output:    out.Output,
+		Error:     out.Error,
+	}
+
+	if cmd != nil {
+		res.CommandId = cmd.GetCommandId()
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	return o.cli.ReportCommandResult(ctx, res)
+}
+
+type CommandOutcome struct {
+	Status pb.CommandResult_Status
+	Output string
+	Error  string
+}
+
+func (o *GRPCOut) handleCommand(cmd *pb.Command) CommandOutcome {
+	switch cmd.GetName() {
+	case "ping":
+		return CommandOutcome{Status: pb.CommandResult_OK, Output: "pong"}
+	case "snapshot":
+		return CommandOutcome{Status: pb.CommandResult_OK, Output: "snapshot triggered"}
+	default:
+		return CommandOutcome{Status: pb.CommandResult_ERROR, Error: "unknown command"}
+	}
+}
+
 type MetricPoint struct {
 	Name  string
 	Value float64
@@ -111,7 +167,7 @@ func (o *GRPCOut) SendMetrics(ctx context.Context, metrics []MetricPoint) error 
 	if o.cli == nil {
 		return nil
 	}
-	agentID := o.cli.Id.AgentId
+	agentID := o.AgentID()
 	pbMetrics := make([]*pb.Metric, 0, len(metrics))
 
 	for _, m := range metrics {
@@ -193,7 +249,7 @@ func ToMetricPoints(c Collected) []MetricPoint {
 	return metrics
 }
 
-func GRPCSend(ctx context.Context, env RuntimeEnv, out *GRPCOut, c Collected) {
+func GRPCSend(ctx context.Context, out *GRPCOut, c Collected) {
 	metrics := ToMetricPoints(c)
 	if err := out.SendMetrics(ctx, metrics); err != nil {
 		log.Printf("[metrics] send failed: %v", err)

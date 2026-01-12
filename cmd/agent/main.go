@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-agent/internal/agent"
 	"go-agent/internal/config"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -63,8 +64,17 @@ func main() {
 			c := agent.Collect(ctx, env)
 			agent.ConsoleOut(ctx, env, c)
 			if grpc != nil {
-				grpc.SendHeartbeat(ctx)
-				agent.GRPCSend(ctx, env, grpc, c)
+				res, err := grpc.SendHeartbeat(ctx)
+				if err != nil {
+					log.Printf("[hb] failed: %v", err)
+				} else {
+					for _, cmd := range res.Commands {
+						if err := grpc.HandleAndReportCommand(ctx, cmd); err != nil {
+							log.Printf("[command] handle failed: %v", err)
+						}
+					}
+				}
+				agent.GRPCSend(ctx, grpc, c)
 			}
 		}
 	}

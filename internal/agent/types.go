@@ -4,6 +4,24 @@ import (
 	"context"
 )
 
+type KubernetesMeta struct {
+	Namespace string
+	PodName   string
+	PodUID    string
+	PodIP     string
+
+	NodeName string
+	NodeUID  string
+
+	NodeLabels map[string]string
+
+	Valid bool
+}
+
+type K8sMetaProvider interface {
+	K8sMeta(ctx context.Context) (KubernetesMeta, error)
+}
+
 type CPUStats struct {
 	UsagePercent float64
 	LimitCores   float64

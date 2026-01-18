@@ -28,6 +28,8 @@ type Collected struct {
 	Mem  MemStats
 	Disk DiskStats
 	Proc ProcStats
+
+	K8s KubernetesMeta
 }
 
 func mustLoadLocation(src string) *time.Location {
@@ -219,6 +221,13 @@ func Collect(ctx context.Context, env RuntimeEnv) Collected {
 		fmt.Printf("Proc Error: %v\n", err)
 	} else {
 		out.Proc = proc
+	}
+
+	if kp, ok := env.(K8sMetaProvider); ok {
+		meta, err := kp.K8sMeta(ctx)
+		if err == nil {
+			out.K8s = meta
+		}
 	}
 
 	return out

@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agent
+  namespace: agent-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: agent-pod-get
+  namespace: agent-system
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: agent-pod-get
+  namespace: agent-system
+subjects:
+  - kind: ServiceAccount
+    name: agent
+    namespace: agent-system
+roleRef:
+  kind: Role
+  name: agent-pod-get
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: agent-node-get
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: agent-node-get
+subjects:
+  - kind: ServiceAccount
+    name: agent
+    namespace: agent-system
+roleRef:
+  kind: ClusterRole
+  name: agent-node-get
+  apiGroup: rbac.authorization.k8s.io

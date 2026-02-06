@@ -15,7 +15,7 @@ spec:
       serviceAccountName: agent
       containers:
         - name: agent
-          image: YOUR_REGISTRY/agent:latest
+          image: sangmiha42/agent:latest
           env:
             - name: POD_NAME
               valueFrom:

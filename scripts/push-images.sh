@@ -2,7 +2,7 @@
 set -e
 
 # Configuration
-REGISTRY="${REGISTRY:-your-registry}"
+REGISTRY="${REGISTRY:-sangmiha42}"
 TAG="${TAG:-latest}"
 
 # Colors for output

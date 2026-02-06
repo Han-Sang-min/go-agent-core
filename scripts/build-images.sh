@@ -2,7 +2,7 @@
 set -e
 
 # Configuration
-REGISTRY="${REGISTRY:-your-registry}"
+REGISTRY="${REGISTRY:-sangmiha42}"
 TAG="${TAG:-latest}"
 
 # Colors for output
@@ -21,6 +21,7 @@ docker build -f deploy/docker/Dockerfile.collector \
   -t ${REGISTRY}/collector:${TAG} \
   .
 
+# Build Agent
 echo -e "${GREEN}Building Agent image...${NC}"
 docker build -f deploy/docker/Dockerfile.agent \
   -t ${REGISTRY}/agent:${TAG} \

@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collector
+  namespace: agent-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: collector
+  template:
+    metadata:
+      labels:
+        app: collector
+    spec:
+      nodeSelector:
+        role: infra
+      containers:
+        - name: collector
+          image: sangmiha42/collector:latest
+          ports:
+            - containerPort: 50051
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collector
+  namespace: agent-system
+spec:
+  selector:
+    app: collector
+  ports:
+    - port: 50051
+      targetPort: 50051
+      protocol: TCP

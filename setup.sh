@@ -16,7 +16,7 @@ fi
 
 echo ">>> [3/4] Creating Kubernetes Cluster..."
 if ! kind get clusters | grep -q "k8s-learn"; then
-    kind create cluster --name k8s-learn
+    kind create cluster --name k8s-learn --config kind-multi-node.yaml
 else
     echo "Cluster 'k8s-learn' already exists."
 fi

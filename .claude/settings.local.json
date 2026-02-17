@@ -10,7 +10,9 @@
       "Bash(kubectl run:*)",
       "Bash(kubectl apply:*)",
       "Bash(kubectl delete:*)",
-      "Bash(kubectl logs:*)"
+      "Bash(kubectl logs:*)",
+      "Bash(go test:*)",
+      "Bash(go vet:*)"
     ]
   }
 }

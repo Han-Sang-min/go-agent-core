@@ -22,6 +22,9 @@ type AgentState struct {
 	LastSeen  time.Time
 	BootId    string
 
+	NodeName string
+	Hostname string
+
 	Pending []*pb.Command
 }
 
@@ -90,6 +93,8 @@ func (h *Handler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Re
 		FirstSeen: now,
 		LastSeen:  now,
 		BootId:    uuid.NewString(),
+		NodeName:  req.Nodename,
+		Hostname:  req.Hostname,
 		Pending: []*pb.Command{
 			{
 				CommandId: "boot-" + agentID,
@@ -100,7 +105,7 @@ func (h *Handler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Re
 	}
 	h.mu.Unlock()
 
-	log.Printf("[register] agent_id=%s host=%s", agentID, req.GetHostname())
+	log.Printf("[register] agent_id=%s node=%s host=%s", agentID, req.GetNodename(), req.GetHostname())
 	return &pb.RegisterResponse{AgentId: agentID}, nil
 }
 
@@ -155,8 +160,18 @@ func (h *Handler) SendMetrics(ctx context.Context, req *pb.MetricBatch) (*pb.Ack
 	if req.GetAgentId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "agent_id is required")
 	}
+
+	h.mu.Lock()
+	st := h.agents[req.GetAgentId()]
+	h.mu.Unlock()
+
+	nodeName := "unknown"
+	if st != nil {
+		nodeName = st.NodeName
+	}
+
 	for _, metric := range req.Metrics {
-		log.Printf("[%s][%s] %f", metric.Name, req.AgentId, metric.Value)
+		log.Printf("[%s][%s / %s] %f", metric.Name, req.AgentId, nodeName, metric.Value)
 	}
 	return &pb.Ack{Ok: true, Message: "metrics received"}, nil
 }

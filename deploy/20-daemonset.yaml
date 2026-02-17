@@ -17,6 +17,8 @@ spec:
         - name: agent
           image: sangmiha42/agent:latest
           env:
+            - name: COLLECTOR_ADDR
+              value: collector:50051
             - name: POD_NAME
               valueFrom:
                 fieldRef:

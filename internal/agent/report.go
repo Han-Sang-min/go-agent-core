@@ -69,7 +69,8 @@ func NewGRPCOut(ctx context.Context, addr string) (*GRPCOut, error) {
 		return nil, err
 	}
 	hostname, _ := os.Hostname()
-	if err := cli.Register(ctx, &pb.RegisterRequest{Hostname: hostname}); err != nil {
+	nodename := os.Getenv("NODE_NAME")
+	if err := cli.Register(ctx, &pb.RegisterRequest{Hostname: hostname, Nodename: nodename}); err != nil {
 		_ = cli.Close()
 		return nil, fmt.Errorf("register failed: %w", err)
 	}

@@ -74,6 +74,7 @@ func (CommandResult_Status) EnumDescriptor() ([]byte, []int) {
 type RegisterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Hostname      string                 `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
+	Nodename      string                 `protobuf:"bytes,2,opt,name=nodename,proto3" json:"nodename,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -111,6 +112,13 @@ func (*RegisterRequest) Descriptor() ([]byte, []int) {
 func (x *RegisterRequest) GetHostname() string {
 	if x != nil {
 		return x.Hostname
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetNodename() string {
+	if x != nil {
+		return x.Nodename
 	}
 	return ""
 }
@@ -591,9 +599,10 @@ var File_proto_agent_proto protoreflect.FileDescriptor
 
 const file_proto_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/agent.proto\x12\bagent.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"-\n" +
+	"\x11proto/agent.proto\x12\bagent.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"I\n" +
 	"\x0fRegisterRequest\x12\x1a\n" +
-	"\bhostname\x18\x01 \x01(\tR\bhostname\"-\n" +
+	"\bhostname\x18\x01 \x01(\tR\bhostname\x12\x1a\n" +
+	"\bnodename\x18\x02 \x01(\tR\bnodename\"-\n" +
 	"\x10RegisterResponse\x12\x19\n" +
 	"\bagent_id\x18\x01 \x01(\tR\aagentId\"r\n" +
 	"\tHeartbeat\x12\x19\n" +

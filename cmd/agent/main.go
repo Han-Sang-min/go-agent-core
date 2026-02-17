@@ -31,7 +31,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	grpc, err := agent.NewGRPCOut(ctx, "127.0.0.1:50051")
+	grpc, err := agent.NewGRPCOut(ctx, os.Getenv("COLLECTOR_ADDR"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "grpc agent load failed: %v\n", err)
 	} else {

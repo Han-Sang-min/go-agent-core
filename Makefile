@@ -1,8 +1,9 @@
-.PHONY: proto build build-agent build-collector run once run-collector test lint clean
+.PHONY: proto build build-agent build-collector build-simulator run once run-collector run-simulator test lint clean
 
 # ====== Variables ======
 AGENT_BIN=bin/agent
 COLLECTOR_BIN=bin/collector
+SIMULATOR_BIN=bin/simulator
 PROTO_DIR=proto
 
 # ====== Proto ======
@@ -19,6 +20,9 @@ build-agent: proto
 build-collector: proto
 	go build -o $(COLLECTOR_BIN) ./cmd/collector
 
+build-simulator: proto
+	go build -o $(SIMULATOR_BIN) ./cmd/simulator
+
 # ====== Run ======
 run: build-agent
 	./$(AGENT_BIN) -config=./config.json
@@ -28,6 +32,9 @@ once: build-agent
 
 run-collector: build-collector
 	./$(COLLECTOR_BIN) -listen=:50051
+
+run-simulator: build-simulator
+	./$(SIMULATOR_BIN) -agents=5 -scenario=full -duration=30s
 
 # ====== Dev ======
 test:

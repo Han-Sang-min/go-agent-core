@@ -12,7 +12,15 @@
       "Bash(kubectl delete:*)",
       "Bash(kubectl logs:*)",
       "Bash(go test:*)",
-      "Bash(go vet:*)"
+      "Bash(go vet:*)",
+      "Bash(make build-agent:*)",
+      "Bash(make proto:*)",
+      "Bash(make build-collector:*)",
+      "Bash(make test:*)",
+      "Bash(bin/agent:*)",
+      "Bash(git -C /workspaces/go-agent-core tag -l)",
+      "Bash(make build-simulator:*)",
+      "Bash(bin/simulator:*)"
     ]
   }
 }

@@ -12,7 +12,10 @@ service CollectorService {
   rpc ReportCommandResult(CommandResult) returns (Ack);
 }
 
-message RegisterRequest { string hostname = 1; }
+message RegisterRequest {
+  string hostname = 1;
+  string nodename = 2;
+}
 message RegisterResponse { string agent_id = 1; }
 
 message Heartbeat {

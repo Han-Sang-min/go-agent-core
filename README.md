@@ -190,23 +190,3 @@ in-cluster config를 사용하고, RBAC은 **최소 권한**(pod get, node get)�
 
 60초간 Heartbeat가 없는 Agent를 자동 제거하여 메모리 누수를 방지한다.
 
----
-
-## 한계점 및 개선 방향
-
-### 현재 한계점
-
-- **단일 Collector**: Collector가 단일 인스턴스로, HA 구성이 없다
-- **메트릭 저장소 없음**: 수신된 메트릭을 로깅만 하고 영구 저장하지 않는다
-- **TLS 미적용**: gRPC 통신이 평문으로 이루어진다
-- **Config Hot Reload 미구현**: 설정 변경 시 Agent 재시작이 필요하다
-- **cgroup v1 미지원**: cgroup v2만 지원하며, v1 환경에서는 Host 모드로 폴백된다
-
-### 개선 방향
-
-- **Collector HA**: 다수 Collector 인스턴스 + 로드밸런싱
-- **메트릭 파이프라인**: 수신 메트릭을 시계열 DB(Prometheus 등)에 저장
-- **mTLS**: Agent-Collector 간 상호 인증
-- **SIGHUP Hot Reload**: 설정 파일 변경 시 Agent 무중단 반영
-- **Plugin 구조**: Collector를 Config 기반으로 동적 등록/해제
-- **네트워크 재연결 개선**: 지수 백오프 + 재등록 자동화

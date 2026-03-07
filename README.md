@@ -46,9 +46,9 @@ Agent 수집 경로:
 ```
 go-agent/
 ├── cmd/
-│   ├── agent/main.go          # Agent 엔트리포인트
-│   ├── collector/main.go      # Collector 서버 엔트리포인트
-│   └── simulator/main.go      # Simulator 엔트리포인트
+│   ├── agent/main.go           # Agent 엔트리포인트
+│   ├── collector/main.go       # Collector 서버 엔트리포인트
+│   └── simulator/main.go       # Simulator 엔트리포인트
 ├── internal/
 │   ├── agent/                  # 메트릭 수집, 환경 감지, K8s 연동
 │   ├── collector/              # gRPC 서버, 핸들러, Agent 관리

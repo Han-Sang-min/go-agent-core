@@ -12,18 +12,30 @@ import (
 )
 
 func DetectEnv() RuntimeEnv {
+	var base RuntimeEnv
+
 	if isContainer() && isCgroupV2() {
 		if cgPath, err := selfCgroupPathV2(); err == nil {
 			cgPath = strings.TrimPrefix(cgPath, "/")
-			base := "/sys/fs/cgroup"
+			cgBase := "/sys/fs/cgroup"
 			if cgPath != "" {
-				base = filepath.Join(base, cgPath)
+				cgBase = filepath.Join(cgBase, cgPath)
 			}
-			reader := NewCgroupV2Reader(base)
-			return NewContainerEnv(reader, "")
+			reader := NewCgroupV2Reader(cgBase)
+			base = NewContainerEnv(reader, "")
 		}
 	}
-	return NewHostEnv("")
+	if base == nil {
+		base = NewHostEnv("")
+	}
+
+	if isKubernetes() {
+		if k8s, err := NewKubernetesEnv(); err == nil {
+			return NewEnvWithK8sMeta(base, k8s)
+		}
+	}
+
+	return base
 }
 
 func isContainer() bool {

@@ -12,6 +12,7 @@ func NewEnvWithK8sMeta(base RuntimeEnv, k8s *KubernetesEnv) *EnvWithK8sMeta {
 	return &EnvWithK8sMeta{base: base, k8s: k8s}
 }
 
+func (e *EnvWithK8sMeta) Kind() string                                  { return e.base.Kind() }
 func (e *EnvWithK8sMeta) CPU(ctx context.Context) (CPUStats, error)    { return e.base.CPU(ctx) }
 func (e *EnvWithK8sMeta) Mem(ctx context.Context) (MemStats, error)    { return e.base.Mem(ctx) }
 func (e *EnvWithK8sMeta) Disk(ctx context.Context) (DiskStats, error)  { return e.base.Disk(ctx) }

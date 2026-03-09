@@ -488,6 +488,7 @@ type MetricBatch struct {
 	AgentId       string                 `protobuf:"bytes,1,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
 	Time          *timestamp.Timestamp   `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
 	Metrics       []*Metric              `protobuf:"bytes,3,rep,name=metrics,proto3" json:"metrics,omitempty"`
+	Labels        map[string]string      `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -539,6 +540,13 @@ func (x *MetricBatch) GetTime() *timestamp.Timestamp {
 func (x *MetricBatch) GetMetrics() []*Metric {
 	if x != nil {
 		return x.Metrics
+	}
+	return nil
+}
+
+func (x *MetricBatch) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
 	}
 	return nil
 }
@@ -632,11 +640,15 @@ const file_proto_agent_proto_rawDesc = "" +
 	"\x06Metric\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x12\n" +
-	"\x04unit\x18\x03 \x01(\tR\x04unit\"\x84\x01\n" +
+	"\x04unit\x18\x03 \x01(\tR\x04unit\"\xfa\x01\n" +
 	"\vMetricBatch\x12\x19\n" +
 	"\bagent_id\x18\x01 \x01(\tR\aagentId\x12.\n" +
 	"\x04time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12*\n" +
-	"\ametrics\x18\x03 \x03(\v2\x10.agent.v1.MetricR\ametrics\"/\n" +
+	"\ametrics\x18\x03 \x03(\v2\x10.agent.v1.MetricR\ametrics\x129\n" +
+	"\x06labels\x18\x04 \x03(\v2!.agent.v1.MetricBatch.LabelsEntryR\x06labels\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"/\n" +
 	"\x03Ack\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage2\x8c\x02\n" +
@@ -659,7 +671,7 @@ func file_proto_agent_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_agent_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_proto_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_proto_agent_proto_goTypes = []any{
 	(CommandResult_Status)(0),   // 0: agent.v1.CommandResult.Status
 	(*RegisterRequest)(nil),     // 1: agent.v1.RegisterRequest
@@ -671,28 +683,30 @@ var file_proto_agent_proto_goTypes = []any{
 	(*Metric)(nil),              // 7: agent.v1.Metric
 	(*MetricBatch)(nil),         // 8: agent.v1.MetricBatch
 	(*Ack)(nil),                 // 9: agent.v1.Ack
-	(*timestamp.Timestamp)(nil), // 10: google.protobuf.Timestamp
+	nil,                         // 10: agent.v1.MetricBatch.LabelsEntry
+	(*timestamp.Timestamp)(nil), // 11: google.protobuf.Timestamp
 }
 var file_proto_agent_proto_depIdxs = []int32{
-	10, // 0: agent.v1.Heartbeat.time:type_name -> google.protobuf.Timestamp
+	11, // 0: agent.v1.Heartbeat.time:type_name -> google.protobuf.Timestamp
 	5,  // 1: agent.v1.HeartbeatResponse.commands:type_name -> agent.v1.Command
-	10, // 2: agent.v1.CommandResult.time:type_name -> google.protobuf.Timestamp
+	11, // 2: agent.v1.CommandResult.time:type_name -> google.protobuf.Timestamp
 	0,  // 3: agent.v1.CommandResult.status:type_name -> agent.v1.CommandResult.Status
-	10, // 4: agent.v1.MetricBatch.time:type_name -> google.protobuf.Timestamp
+	11, // 4: agent.v1.MetricBatch.time:type_name -> google.protobuf.Timestamp
 	7,  // 5: agent.v1.MetricBatch.metrics:type_name -> agent.v1.Metric
-	1,  // 6: agent.v1.CollectorService.Register:input_type -> agent.v1.RegisterRequest
-	3,  // 7: agent.v1.CollectorService.SendHeartbeat:input_type -> agent.v1.Heartbeat
-	8,  // 8: agent.v1.CollectorService.SendMetrics:input_type -> agent.v1.MetricBatch
-	6,  // 9: agent.v1.CollectorService.ReportCommandResult:input_type -> agent.v1.CommandResult
-	2,  // 10: agent.v1.CollectorService.Register:output_type -> agent.v1.RegisterResponse
-	4,  // 11: agent.v1.CollectorService.SendHeartbeat:output_type -> agent.v1.HeartbeatResponse
-	9,  // 12: agent.v1.CollectorService.SendMetrics:output_type -> agent.v1.Ack
-	9,  // 13: agent.v1.CollectorService.ReportCommandResult:output_type -> agent.v1.Ack
-	10, // [10:14] is the sub-list for method output_type
-	6,  // [6:10] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	10, // 6: agent.v1.MetricBatch.labels:type_name -> agent.v1.MetricBatch.LabelsEntry
+	1,  // 7: agent.v1.CollectorService.Register:input_type -> agent.v1.RegisterRequest
+	3,  // 8: agent.v1.CollectorService.SendHeartbeat:input_type -> agent.v1.Heartbeat
+	8,  // 9: agent.v1.CollectorService.SendMetrics:input_type -> agent.v1.MetricBatch
+	6,  // 10: agent.v1.CollectorService.ReportCommandResult:input_type -> agent.v1.CommandResult
+	2,  // 11: agent.v1.CollectorService.Register:output_type -> agent.v1.RegisterResponse
+	4,  // 12: agent.v1.CollectorService.SendHeartbeat:output_type -> agent.v1.HeartbeatResponse
+	9,  // 13: agent.v1.CollectorService.SendMetrics:output_type -> agent.v1.Ack
+	9,  // 14: agent.v1.CollectorService.ReportCommandResult:output_type -> agent.v1.Ack
+	11, // [11:15] is the sub-list for method output_type
+	7,  // [7:11] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_proto_agent_proto_init() }
@@ -706,7 +720,7 @@ func file_proto_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_agent_proto_rawDesc), len(file_proto_agent_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

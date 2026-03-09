@@ -166,7 +166,7 @@ type MetricPoint struct {
 	Unit  string
 }
 
-func (o *GRPCOut) SendMetrics(ctx context.Context, metrics []MetricPoint) error {
+func (o *GRPCOut) SendMetrics(ctx context.Context, metrics []MetricPoint, labels map[string]string) error {
 	if o.cli == nil {
 		return nil
 	}
@@ -185,6 +185,7 @@ func (o *GRPCOut) SendMetrics(ctx context.Context, metrics []MetricPoint) error 
 		AgentId: agentID,
 		Time:    timestamppb.Now(),
 		Metrics: pbMetrics,
+		Labels:  labels,
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -259,9 +260,27 @@ func ToMetricPoints(c Collected) []MetricPoint {
 	return metrics
 }
 
+func k8sLabels(meta KubernetesMeta) map[string]string {
+	if !meta.Valid {
+		return nil
+	}
+	labels := map[string]string{
+		"namespace": meta.Namespace,
+		"pod_name":  meta.PodName,
+		"pod_uid":   meta.PodUID,
+		"pod_ip":    meta.PodIP,
+		"node_name": meta.NodeName,
+		"node_uid":  meta.NodeUID,
+	}
+	for k, v := range meta.NodeLabels {
+		labels["node_label/"+k] = v
+	}
+	return labels
+}
+
 func GRPCSend(ctx context.Context, out *GRPCOut, c Collected) {
 	metrics := ToMetricPoints(c)
-	if err := out.SendMetrics(ctx, metrics); err != nil {
+	if err := out.SendMetrics(ctx, metrics, k8sLabels(c.K8s)); err != nil {
 		log.Printf("[metrics] send failed: %v", err)
 	}
 }

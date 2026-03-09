@@ -171,7 +171,7 @@ func (h *Handler) SendMetrics(ctx context.Context, req *pb.MetricBatch) (*pb.Ack
 	}
 
 	for _, metric := range req.Metrics {
-		log.Printf("[%s][%s / %s] %f", metric.Name, req.AgentId, nodeName, metric.Value)
+		log.Printf("[%s][%s / %s] %f labels=%v", metric.Name, req.AgentId, nodeName, metric.Value, req.GetLabels())
 	}
 	return &pb.Ack{Ok: true, Message: "metrics received"}, nil
 }

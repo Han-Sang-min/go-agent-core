@@ -1,33 +1,192 @@
-# Step 01 — Agent Core Bootstrap
+# go-agent — Golang 기반 모니터링 Agent/Collector 시스템
 
-본 단계에서는 Golang 기반 Agent(Daemon)의 **기본 실행 골격**을 구현했다.
-Linux 환경에서 장시간 실행되는 프로세스를 전제로,
-**안전한 종료(graceful shutdown)** 와 **주기적 작업 루프**를 중심으로 설계했다.
+Linux / Container / Kubernetes 환경에서 동작하는 **시스템 메트릭 수집 Agent**와
+이를 수신하는 **gRPC Collector 서버**, 그리고 운영 시나리오를 검증하는 **Simulator**로 구성된다.
 
-## 구현 내용
+---
 
-### 1. Graceful Shutdown
-- `SIGINT`, `SIGTERM` 시그널을 수신하여 정상 종료 경로로 진입
-- `os.Exit`를 사용하지 않고, `return` 기반 종료로 `defer`가 정상 동작하도록 설계
-- ticker, signal notifier 등 리소스를 안전하게 정리
+## 아키텍처
 
-### 2. 주기 실행 루프
-- `time.Ticker` 기반으로 Agent의 주기적 작업 구조 구현
-- 향후 Metric 수집 로직을 삽입할 수 있도록 worker 함수로 분리
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Kubernetes Cluster                   │
+│                                                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐               │
+│  │  Agent   │  │  Agent   │  │  Agent   │  (DaemonSet)  │
+│  │ (node-1) │  │ (node-2) │  │ (node-3) │               │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘               │
+│       │             │             │                     │
+│       │     gRPC (Register/Heartbeat/Metrics)           │
+│       │             │             │                     │
+│       └─────────────┼─────────────┘                     │
+│                     ▼                                   │
+│              ┌──────────────┐                           │
+│              │  Collector   │  (Deployment)             │
+│              │  :50051/tcp  │                           │
+│              └──────────────┘                           │
+└─────────────────────────────────────────────────────────┘
 
-### 3. CLI 옵션 지원
-- `flag` 패키지를 사용하여 다음 옵션 지원
-  - `-config`: 설정 파일 경로
-  - `-once`: 단일 실행 모드
-- 실행 모드에 따라 루프 실행 여부를 분기 처리
+Agent 수집 경로:
+  Host  → /proc/stat, /proc/meminfo, syscall.Statfs
+  Container → cgroup v2 (memory.current, cpu.stat)
+  K8s   → in-cluster client-go (Pod/Node metadata)
+```
 
-### 4. 로그 타임스탬프
-- 로그 시간은 `RFC3339` 포맷으로 출력
-- 컨테이너 / 분산 환경에서 시간 정합성을 고려한 포맷 선택
+### 핵심 흐름
 
-## 설계 의도
+1. **Agent** 가 환경(Host / Container)을 자동 감지하고 적합한 Collector로 메트릭 수집
+2. 수집된 CPU, Memory, Disk, Process 메트릭을 **gRPC**로 Collector에 전송
+3. Collector는 Agent 등록, Heartbeat 관리, Command 디스패치를 수행
+4. Kubernetes 환경에서는 Pod/Node 메타데이터를 추가 수집
 
-- Agent는 장시간 실행되는 프로세스이므로,
-  비정상 종료보다는 **명시적인 종료 경로**를 갖도록 설계
-- 초기 단계부터 운영 환경을 가정하여
-  이후 Step에서의 확장(Collector, gRPC, K8s)을 고려한 구조 유지
+---
+
+## 디렉토리 구조
+
+```
+go-agent/
+├── cmd/
+│   ├── agent/main.go           # Agent 엔트리포인트
+│   ├── collector/main.go       # Collector 서버 엔트리포인트
+│   └── simulator/main.go       # Simulator 엔트리포인트
+├── internal/
+│   ├── agent/                  # 메트릭 수집, 환경 감지, K8s 연동
+│   ├── collector/              # gRPC 서버, 핸들러, Agent 관리
+│   ├── config/                 # JSON 설정 로드
+│   ├── simulator/              # 다중 Agent 시뮬레이션 & 시나리오
+│   └── transport/              # gRPC 클라이언트 래퍼
+│   └── util/                   # 유틸리티 함수
+├── proto/
+│   └── agent.proto             # gRPC 서비스 & 메시지 정의
+├── deploy/
+│   ├── docker/                 # Dockerfile (agent, collector)
+│   └── *.yaml                  # K8s 매니페스트 (namespace, RBAC, DaemonSet, Collector)
+├── Makefile
+├── config.json
+└── README.md
+```
+
+---
+
+## 실행 방법
+
+### 사전 요구사항
+
+- Go 1.24+
+- protoc + protoc-gen-go, protoc-gen-go-grpc (proto 코드 재생성 시)
+- Docker (컨테이너 빌드 시)
+- kind / kubectl (K8s 배포 시)
+
+### Host 실행
+
+```bash
+# Collector 실행
+make run-collector
+
+# Agent 실행 (다른 터미널)
+COLLECTOR_ADDR=localhost:50051 make run
+
+# 단일 실행 (1회 수집 후 종료)
+make once
+```
+
+### Docker 실행
+
+```bash
+# 이미지 빌드
+docker build -f deploy/docker/Dockerfile.collector -t collector:latest .
+docker build -f deploy/docker/Dockerfile.agent -t agent:latest .
+
+# Collector 실행
+docker run -p 50051:50051 collector:latest
+
+# Agent 실행
+docker run --rm -e COLLECTOR_ADDR=host.docker.internal:50051 agent:latest
+```
+
+### Kubernetes 배포
+
+```bash
+# Kind 클러스터 생성
+kind create cluster --config kind-multi-node.yaml
+
+# 이미지 빌드 & 로드
+docker build -f deploy/docker/Dockerfile.agent -t agent:latest .
+docker build -f deploy/docker/Dockerfile.collector -t collector:latest .
+kind load docker-image agent:latest collector:latest
+
+# 매니페스트 적용
+kubectl apply -f deploy/00-namespace.yaml
+kubectl apply -f deploy/10-rbac.yaml
+kubectl apply -f deploy/30-collector.yaml
+kubectl apply -f deploy/20-daemonset.yaml
+
+# 확인
+kubectl -n agent-system get pods
+```
+
+### Simulator 실행
+
+```bash
+# 기본 실행 (5개 Agent, full 시나리오, 30초)
+make run-simulator
+
+# 커스텀 실행
+bin/simulator -agents=10 -scenario=cpu-spike -duration=60s -interval=500ms
+
+# 시나리오 목록 확인
+bin/simulator -list-scenarios
+```
+
+**사용 가능 시나리오**: `full`, `cpu-spike`, `mem-spike`, `network-fail`, `error-inject`, `stress`
+
+---
+
+## 설계 선택 이유
+
+### 1. `RuntimeEnv` 인터페이스 기반 환경 추상화
+
+```go
+type RuntimeEnv interface {
+    Kind() string
+    CPU(ctx) CPUStats
+    Mem(ctx) MemStats
+    Disk(ctx) DiskStats
+    Procs(ctx) ProcStats
+}
+```
+
+Host, Container, Simulated 환경을 동일한 인터페이스로 다루어
+**수집 로직과 환경 로직을 분리**했다. Simulator에서도 동일한 `Collect()` 함수를 재사용할 수 있다.
+
+### 2. `/proc`, `/sys` 직접 접근
+
+외부 라이브러리(gopsutil 등)에 의존하지 않고 `/proc/stat`, `/proc/meminfo`, cgroup v2 파일을 직접 파싱한다.
+시스템 레벨 이해를 우선하고, 의존성을 최소화했다.
+
+### 3. CPU 사용률 — 차분 계산 (Differential Sampling)
+
+`/proc/stat`의 누적 jiffies를 두 번 샘플링하여 차분으로 CPU 사용률을 계산한다.
+순간값이 아닌 **구간 평균**을 구해 더 정확한 수치를 얻는다.
+
+### 4. gRPC 4개 RPC 분리
+
+| RPC | 용도 |
+|-----|------|
+| `Register` | Agent 등록, UUID 발급 |
+| `SendHeartbeat` | 생존 확인 + 펜딩 명령 수신 |
+| `SendMetrics` | 메트릭 배치 전송 |
+| `ReportCommandResult` | 명령 실행 결과 보고 |
+
+Heartbeat와 Metrics를 분리하여 **제어 채널과 데이터 채널**을 독립시켰다.
+Collector가 Heartbeat 응답에 Command를 포함시켜 Agent에 명령을 내릴 수 있다.
+
+### 5. K8s 메타데이터 캐싱 (2분 TTL)
+
+Pod/Node 정보는 자주 변경되지 않으므로 캐싱하여 API Server 부하를 줄였다.
+in-cluster config를 사용하고, RBAC은 **최소 권한**(pod get, node get)만 부여한다.
+
+### 6. Collector Agent GC
+
+60초간 Heartbeat가 없는 Agent를 자동 제거하여 메모리 누수를 방지한다.
+

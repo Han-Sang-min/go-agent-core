@@ -153,9 +153,7 @@ func (o *GRPCOut) handleCommand(cmd *pb.Command) CommandOutcome {
 	switch cmd.GetName() {
 	case "ping":
 		return CommandOutcome{Status: pb.CommandResult_OK, Output: "pong"}
-	case "snapshot":
-		return CommandOutcome{Status: pb.CommandResult_OK, Output: "snapshot triggered"}
-	default:
+default:
 		return CommandOutcome{Status: pb.CommandResult_ERROR, Error: "unknown command"}
 	}
 }

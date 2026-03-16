@@ -22,7 +22,7 @@ func newGRPCServer(cfg Config) (*grpcServer, error) {
 	}
 
 	s := grpc.NewServer()
-	h := NewHandler()
+	h := NewHandler(cfg.StatePath)
 	h.Init()
 
 	pb.RegisterCollectorServiceServer(s, h)

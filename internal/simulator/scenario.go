@@ -4,10 +4,11 @@ import "time"
 
 // Phase describes one segment of a scenario timeline.
 type Phase struct {
-	Name        string
-	Duration    time.Duration
-	Mode        ScenarioMode
-	NetworkDown bool
+	Name             string
+	Duration         time.Duration
+	Mode             ScenarioMode
+	NetworkDown      bool
+	CollectorRestart bool // restart the embedded collector at the start of this phase
 	// TargetAgents specifies which agent indices are affected.
 	// nil means ALL agents.
 	TargetAgents []int
@@ -22,12 +23,13 @@ type Scenario struct {
 // PredefinedScenarios returns all built-in scenarios keyed by name.
 func PredefinedScenarios() map[string]Scenario {
 	return map[string]Scenario{
-		"full":         fullScenario(),
-		"cpu-spike":    cpuSpikeScenario(),
-		"mem-spike":    memSpikeScenario(),
-		"network-fail": networkFailScenario(),
-		"error-inject": errorInjectScenario(),
-		"stress":       stressScenario(),
+		"full":              fullScenario(),
+		"cpu-spike":         cpuSpikeScenario(),
+		"mem-spike":         memSpikeScenario(),
+		"network-fail":      networkFailScenario(),
+		"error-inject":      errorInjectScenario(),
+		"stress":            stressScenario(),
+		"collector-restart": collectorRestartScenario(),
 	}
 }
 
@@ -89,6 +91,17 @@ func errorInjectScenario() Scenario {
 			{Name: "cpu-errors", Duration: 5 * time.Second, Mode: ModeErrorCPU},
 			{Name: "all-errors", Duration: 5 * time.Second, Mode: ModeErrorAll},
 			{Name: "recovery", Duration: 5 * time.Second, Mode: ModeNormal},
+		},
+	}
+}
+
+func collectorRestartScenario() Scenario {
+	return Scenario{
+		Name: "collector-restart",
+		Phases: []Phase{
+			{Name: "before-restart", Duration: 5 * time.Second, Mode: ModeNormal},
+			{Name: "collector-down", Duration: 8 * time.Second, Mode: ModeNormal, CollectorRestart: true},
+			{Name: "recovery", Duration: 7 * time.Second, Mode: ModeNormal},
 		},
 	}
 }

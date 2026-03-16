@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"go-agent/internal/agent"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // AgentStatus is the observable state of one simulated agent.
@@ -156,10 +158,16 @@ func (r *AgentRunner) tick(ctx context.Context) {
 	// Send heartbeat
 	res, err := r.grpcOut.SendHeartbeat(ctx)
 	if err != nil {
-		r.errorCount.Add(1)
-		r.mu.Lock()
-		r.status.LastError = fmt.Sprintf("heartbeat: %v", err)
-		r.mu.Unlock()
+		if status.Code(err) == codes.NotFound {
+			log.Printf("[sim-agent-%03d] not found on collector, re-registering...", r.id)
+			r.disconnect()
+			r.connect(ctx)
+		} else {
+			r.errorCount.Add(1)
+			r.mu.Lock()
+			r.status.LastError = fmt.Sprintf("heartbeat: %v", err)
+			r.mu.Unlock()
+		}
 	} else {
 		r.mu.Lock()
 		r.status.LastError = ""

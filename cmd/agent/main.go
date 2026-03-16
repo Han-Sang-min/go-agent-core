@@ -11,6 +11,9 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -66,7 +69,17 @@ func main() {
 			if grpc != nil {
 				res, err := grpc.SendHeartbeat(ctx)
 				if err != nil {
-					log.Printf("[hb] failed: %v", err)
+					if status.Code(err) == codes.NotFound {
+						log.Printf("[hb] agent not found, re-registering...")
+						if newGRPC, rerr := agent.NewGRPCOut(ctx, os.Getenv("COLLECTOR_ADDR")); rerr == nil {
+							grpc.Close()
+							grpc = newGRPC
+						} else {
+							log.Printf("[hb] re-register failed: %v", rerr)
+						}
+					} else {
+						log.Printf("[hb] failed: %v", err)
+					}
 				} else {
 					for _, cmd := range res.Commands {
 						if err := grpc.HandleAndReportCommand(ctx, cmd); err != nil {

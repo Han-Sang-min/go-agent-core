@@ -2,7 +2,9 @@ package collector
 
 import (
 	"context"
+	"encoding/json"
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -28,12 +30,22 @@ type AgentState struct {
 	Pending []*pb.Command
 }
 
+type agentSnapshot struct {
+	AgentID   string    `json:"agent_id"`
+	Hostname  string    `json:"hostname"`
+	NodeName  string    `json:"node_name"`
+	BootId    string    `json:"boot_id"`
+	FirstSeen time.Time `json:"first_seen"`
+	LastSeen  time.Time `json:"last_seen"`
+}
+
 type Handler struct {
 	pb.UnimplementedCollectorServiceServer
 
-	mu     sync.Mutex
-	agents map[string]*AgentState
-	ttl    time.Duration
+	mu        sync.Mutex
+	agents    map[string]*AgentState
+	ttl       time.Duration
+	statePath string
 }
 
 func mustLoadLocation(src string) *time.Location {
@@ -44,14 +56,79 @@ func mustLoadLocation(src string) *time.Location {
 	return l
 }
 
-func NewHandler() *Handler {
+func NewHandler(statePath string) *Handler {
 	h := &Handler{
-		agents: make(map[string]*AgentState),
-		ttl:    60 * time.Second,
+		agents:    make(map[string]*AgentState),
+		ttl:       60 * time.Second,
+		statePath: statePath,
 	}
+	h.loadState()
 	go h.gcLoop(10 * time.Second)
 
 	return h
+}
+
+func (h *Handler) saveState() {
+	if h.statePath == "" {
+		return
+	}
+
+	h.mu.Lock()
+	snapshots := make([]agentSnapshot, 0, len(h.agents))
+	for id, st := range h.agents {
+		snapshots = append(snapshots, agentSnapshot{
+			AgentID:   id,
+			Hostname:  st.Hostname,
+			NodeName:  st.NodeName,
+			BootId:    st.BootId,
+			FirstSeen: st.FirstSeen,
+			LastSeen:  st.LastSeen,
+		})
+	}
+	h.mu.Unlock()
+
+	data, err := json.Marshal(snapshots)
+	if err != nil {
+		log.Printf("[state] marshal failed: %v", err)
+		return
+	}
+	if err := os.WriteFile(h.statePath, data, 0644); err != nil {
+		log.Printf("[state] write failed: %v", err)
+	}
+}
+
+func (h *Handler) loadState() {
+	if h.statePath == "" {
+		return
+	}
+
+	data, err := os.ReadFile(h.statePath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Printf("[state] read failed: %v", err)
+		}
+		return
+	}
+
+	var snapshots []agentSnapshot
+	if err := json.Unmarshal(data, &snapshots); err != nil {
+		log.Printf("[state] unmarshal failed: %v", err)
+		return
+	}
+
+	h.mu.Lock()
+	for _, s := range snapshots {
+		h.agents[s.AgentID] = &AgentState{
+			FirstSeen: s.FirstSeen,
+			LastSeen:  s.LastSeen,
+			BootId:    s.BootId,
+			NodeName:  s.NodeName,
+			Hostname:  s.Hostname,
+		}
+	}
+	h.mu.Unlock()
+
+	log.Printf("[state] loaded %d agents", len(snapshots))
 }
 
 func (h *Handler) Init() {
@@ -70,13 +147,19 @@ func (h *Handler) gcLoop(interval time.Duration) {
 		now := time.Now()
 
 		h.mu.Lock()
+		changed := false
 		for agentID, st := range h.agents {
 			if now.Sub(st.LastSeen) > h.ttl {
 				delete(h.agents, agentID)
 				log.Printf("[gc] expired agent_id=%s", agentID)
+				changed = true
 			}
 		}
 		h.mu.Unlock()
+
+		if changed {
+			h.saveState()
+		}
 	}
 }
 
@@ -106,6 +189,7 @@ func (h *Handler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Re
 	h.mu.Unlock()
 
 	log.Printf("[register] agent_id=%s node=%s host=%s", agentID, req.GetNodename(), req.GetHostname())
+	h.saveState()
 	return &pb.RegisterResponse{AgentId: agentID}, nil
 }
 

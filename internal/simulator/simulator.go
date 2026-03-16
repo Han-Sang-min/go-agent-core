@@ -25,6 +25,10 @@ type Simulator struct {
 	agents []*AgentRunner
 	envs   []*SimulatedEnv
 	dash   *Dashboard
+
+	collectorAddr   string
+	collectorCancel context.CancelFunc
+	collectorWg     sync.WaitGroup
 }
 
 func New(cfg Config) *Simulator {
@@ -42,31 +46,11 @@ func (s *Simulator) Run(ctx context.Context) error {
 	}
 
 	// Start embedded collector if no external address provided
-	collectorAddr := s.cfg.CollectorAddr
-	if collectorAddr == "" {
-		collectorAddr = "localhost:50051"
-		collectorCtx, collectorCancel := context.WithCancel(ctx)
-		defer collectorCancel()
-
-		cfg := collector.DefaultConfig()
-		cfg.ListenAddr = ":50051"
-		app := collector.New(cfg)
-
-		var collectorWg sync.WaitGroup
-		collectorWg.Add(1)
-		go func() {
-			defer collectorWg.Done()
-			if err := app.Run(collectorCtx); err != nil {
-				log.Printf("[simulator] collector error: %v", err)
-			}
-		}()
-
-		// Wait for collector to bind the port
-		time.Sleep(500 * time.Millisecond)
-		defer func() {
-			collectorCancel()
-			collectorWg.Wait()
-		}()
+	s.collectorAddr = s.cfg.CollectorAddr
+	if s.collectorAddr == "" {
+		s.collectorAddr = "localhost:50051"
+		s.startCollector(ctx)
+		defer s.stopCollector()
 	}
 
 	// Create simulated environments and agent runners
@@ -74,7 +58,7 @@ func (s *Simulator) Run(ctx context.Context) error {
 	s.agents = make([]*AgentRunner, s.cfg.AgentCount)
 	for i := 0; i < s.cfg.AgentCount; i++ {
 		s.envs[i] = NewSimulatedEnv(i, uint64(i*1000+1))
-		s.agents[i] = NewAgentRunner(i, s.envs[i], collectorAddr, s.cfg.Interval)
+		s.agents[i] = NewAgentRunner(i, s.envs[i], s.collectorAddr, s.cfg.Interval)
 	}
 
 	s.dash = NewDashboard(s.agents)
@@ -114,13 +98,55 @@ func (s *Simulator) Run(ctx context.Context) error {
 	return nil
 }
 
+func (s *Simulator) startCollector(parentCtx context.Context) {
+	ctx, cancel := context.WithCancel(parentCtx)
+	s.collectorCancel = cancel
+
+	cfg := collector.DefaultConfig()
+	cfg.ListenAddr = ":50051"
+	cfg.StatePath = "" // no file persistence in simulator
+	app := collector.New(cfg)
+
+	s.collectorWg.Add(1)
+	go func() {
+		defer s.collectorWg.Done()
+		if err := app.Run(ctx); err != nil {
+			log.Printf("[simulator] collector error: %v", err)
+		}
+	}()
+
+	// Wait for collector to bind the port
+	time.Sleep(500 * time.Millisecond)
+}
+
+func (s *Simulator) stopCollector() {
+	if s.collectorCancel != nil {
+		s.collectorCancel()
+		s.collectorWg.Wait()
+		s.collectorCancel = nil
+	}
+}
+
+func (s *Simulator) restartCollector(parentCtx context.Context) {
+	log.Printf("[simulator] Restarting collector...")
+	s.stopCollector()
+	time.Sleep(300 * time.Millisecond) // wait for port release
+	s.collectorWg = sync.WaitGroup{}
+	s.startCollector(parentCtx)
+	log.Printf("[simulator] Collector restarted — agents will re-register")
+}
+
 func (s *Simulator) runScenario(ctx context.Context, sc Scenario) {
 	deadline := time.After(s.cfg.Duration)
 
 	for _, phase := range sc.Phases {
 		s.dash.SetPhase(phase.Name)
-		log.Printf("[simulator] Phase: %s (duration=%s, mode=%s, network_down=%v)",
-			phase.Name, phase.Duration, phase.Mode, phase.NetworkDown)
+		log.Printf("[simulator] Phase: %s (duration=%s, mode=%s, network_down=%v, collector_restart=%v)",
+			phase.Name, phase.Duration, phase.Mode, phase.NetworkDown, phase.CollectorRestart)
+
+		if phase.CollectorRestart && s.cfg.CollectorAddr == "" {
+			s.restartCollector(ctx)
+		}
 
 		targets := phase.TargetAgents
 		if len(targets) == 0 {
